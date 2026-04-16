@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBar } from "./phone-frame";
 import {
   BadgeCheck,
   CalendarClock,
   ChevronLeft,
-  Clock3,
-  MapPin,
   Radar,
   Sparkles,
 } from "lucide-react";
@@ -360,42 +358,6 @@ export function TravelSketchbook() {
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>2순위 · Auto-Log</p>
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                패시브 여정 기록
-              </h2>
-            </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: G.pointSoft }}>
-              <Clock3 size={16} style={{ color: G.pointDeep }} />
-            </div>
-          </div>
-
-          <p style={{ fontSize: 12, color: G.muted }} className="mt-2">
-            앱을 열지 않아도 GPS와 사진 데이터 기반으로 방문 장소와 체류 시간이 자동으로 기록됩니다.
-          </p>
-
-          <div className="space-y-2 mt-3">
-            {autoLogs.map((log) => (
-              <article
-                key={log.id}
-                className="rounded-2xl p-3 border flex items-center justify-between"
-                style={{ borderColor: G.line, background: "#FBFDFC" }}
-              >
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 800, color: G.text }}>{log.place}</p>
-                  <p style={{ fontSize: 11, color: G.muted }} className="mt-0.5">
-                    {log.source} · 체류 {log.dwellMin}분
-                  </p>
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: G.pointDeep }}>{log.timeLabel}</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
-          <div className="flex items-center justify-between">
-            <div>
               <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>여행 기록</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 사용자 기록 보관함
@@ -585,20 +547,6 @@ export function TravelSketchbook() {
         </div>
       )}
 
-      <div className="px-4 pt-4">
-        <button
-          onClick={() => navigate("/record-input")}
-          className="w-full h-12 rounded-2xl text-white inline-flex items-center justify-center gap-2"
-          style={{
-            fontSize: 15,
-            fontWeight: 900,
-            background: `linear-gradient(135deg, ${G.point}, ${G.pointDeep})`,
-          }}
-        >
-          <MapPin size={15} />
-          자동 기록 확인하고 여정 확정하기
-        </button>
-      </div>
     </div>
   );
 }
