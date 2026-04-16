@@ -7,10 +7,11 @@ import {
   ChevronLeft,
   Radar,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import damggaebiImg from "../../assets/damggaebiImg.png";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { getCompletedPlans, type CompletedPlan } from "../completed-plan-store";
+import { getCompletedPlans, removeCompletedPlan, type CompletedPlan } from "../completed-plan-store";
 import {
   journeyMineSpots,
   journeyRecords,
@@ -21,27 +22,8 @@ import {
 
 type ProvinceVisit = ProvinceVisitSeed;
 
-type AutoLogItem = {
-  id: string;
-  place: string;
-  dwellMin: number;
-  source: string;
-  timeLabel: string;
-};
-
 const initialProvinceVisits: ProvinceVisit[] = provinceVisitSeed;
 const mineSpots: MineSpot[] = journeyMineSpots;
-
-function makeLog(regionName: string): AutoLogItem {
-  const dwellMin = 16 + Math.floor(Math.random() * 34);
-  return {
-    id: `${regionName}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    place: `${regionName} 방문`,
-    dwellMin,
-    source: "GPS + 사진 메타데이터",
-    timeLabel: "방금 전",
-  };
-}
 
 function bubbleRadius(count: number, maxCount: number) {
   if (maxCount <= 0) return 7;
@@ -77,46 +59,10 @@ export function TravelSketchbook() {
     fog: "rgba(18, 28, 19, 0.78)",
   };
 
-  const [trackingEnabled, setTrackingEnabled] = useState(true);
-  const [provinceVisits, setProvinceVisits] = useState<ProvinceVisit[]>(initialProvinceVisits);
-  const [autoLogs, setAutoLogs] = useState<AutoLogItem[]>(() => {
-    const fromRegions = initialProvinceVisits
-      .slice(0, 2)
-      .reverse()
-      .map((province) => makeLog(province.name));
-    const fromRecords = journeyRecords
-      .slice(0, 2)
-      .map((record) => ({
-        id: `record-${record.id}`,
-        place: `${record.region} 기록`,
-        dwellMin: 24 + record.id * 5,
-        source: "저장된 여정 데이터",
-        timeLabel: "오늘",
-      }));
-    return [...fromRecords, ...fromRegions];
-  });
+  const [provinceVisits] = useState<ProvinceVisit[]>(initialProvinceVisits);
   const [minedIds, setMinedIds] = useState<string[]>([]);
   const [popupText, setPopupText] = useState<string | null>(null);
   const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]);
-
-  useEffect(() => {
-    if (!trackingEnabled) return;
-
-    const timer = window.setInterval(() => {
-      setProvinceVisits((prev) => {
-        const idx = Math.floor(Math.random() * prev.length);
-        const next = prev.map((province, i) =>
-          i === idx
-            ? { ...province, visitCount: province.visitCount + 1 }
-            : province
-        );
-        setAutoLogs((logs) => [makeLog(next[idx].name), ...logs].slice(0, 6));
-        return next;
-      });
-    }, 2200);
-
-    return () => window.clearInterval(timer);
-  }, [trackingEnabled]);
 
   useEffect(() => {
     if (!popupText) return;
@@ -165,11 +111,6 @@ export function TravelSketchbook() {
     [totalVisitCount]
   );
 
-  const totalStayMin = useMemo(
-    () => autoLogs.reduce((sum, log) => sum + log.dwellMin, 0),
-    [autoLogs]
-  );
-
   const fogOpacity = useMemo(() => {
     const value = 0.68 - conquestRate * 0.005;
     return Math.max(0.18, Number(value.toFixed(2)));
@@ -181,29 +122,60 @@ export function TravelSketchbook() {
     setPopupText(`${mine.brand}: ${mine.reward}`);
   };
 
+  const handleRemoveCompletedPlan = (planId: string) => {
+    const next = removeCompletedPlan(planId);
+    setCompletedPlans(next);
+  };
+
   return (
     <div className="min-h-full pb-8" style={{ background: G.bg }}>
-      <div className="bg-white border-b" style={{ borderColor: G.line }}>
-        <StatusBar />
-        <div className="px-5 pt-2 pb-4 flex items-start gap-3">
-          <button onClick={() => navigate(-1)} className="p-1 -ml-1 mt-1">
-            <ChevronLeft size={22} style={{ color: G.text }} />
+      <div className="bg-[#2C2C2A] rounded-b-[30px] pb-5 shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
+        <StatusBar light />
+        <div className="px-5 pt-1 flex items-start gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-8 h-8 mt-1 -ml-1 rounded-xl inline-flex items-center justify-center bg-white/10"
+          >
+            <ChevronLeft size={18} className="text-white" />
           </button>
           <div className="flex-1">
-            <div
-              className="inline-flex items-center px-3 h-7 rounded-full mb-2"
-              style={{ background: G.pointSoft }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>담깨비땅</span>
-            </div>
-            <h1 style={{ fontSize: 24, fontWeight: 900, color: G.text, lineHeight: 1.22 }}>
-              실시간 정복 대시보드
+            <h1 className="text-white" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.2 }}>
+              담깨비 <span style={{ color: "#34C759" }}>LAND</span>
             </h1>
-            <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
-              전국 지도에서 자치도별 방문 횟수를 비교하며 점유 현황을 확인해요.
+            <p className="mt-1" style={{ fontSize: 12, fontWeight: 600, color: "#A6F1B7" }}>
+              점유율과 기록을 한눈에 보는 정복 대시보드
             </p>
           </div>
           <img src={damggaebiImg} alt="담깨비" className="w-[50px] h-[50px] object-contain mt-1" />
+        </div>
+
+        <div className="px-4 mt-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
+              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+                정복률
+              </p>
+              <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
+                {conquestRate}%
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
+              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+                총 방문
+              </p>
+              <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
+                {totalVisitCount}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
+              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+                오늘 채굴
+              </p>
+              <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
+                {todayMinedCount}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -211,9 +183,8 @@ export function TravelSketchbook() {
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>1순위 · Fog of War</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                실시간 영토 점유
+                정복 일지
               </h2>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: G.pointSoft }}>
@@ -338,21 +309,65 @@ export function TravelSketchbook() {
 
           <div className="flex items-center justify-between mt-3">
             <p style={{ fontSize: 12, color: G.muted }}>
-              버블 크기 = 자치도별 방문 횟수 · 이동 {routeDistanceKm}km · 체류 {totalStayMin}분
+              버블 크기 = 자치도별 방문 횟수 · 이동 {routeDistanceKm}km
             </p>
-            <button
-              onClick={() => setTrackingEnabled((prev) => !prev)}
-              className="h-8 px-3 rounded-lg"
-              style={{
-                background: trackingEnabled ? G.pointSoft : "#F1F3F2",
-                color: trackingEnabled ? G.pointDeep : "#7A8A7D",
-                fontSize: 11,
-                fontWeight: 800,
-              }}
-            >
-              {trackingEnabled ? "실시간 추적 ON" : "실시간 추적 OFF"}
-            </button>
           </div>
+        </section>
+
+        <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>플랜 완료건</p>
+              <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
+                여정 지도 그리기
+              </h2>
+            </div>
+            <div className="h-7 px-2.5 rounded-lg inline-flex items-center" style={{ background: G.pointSoft }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>
+                {completedPlans.length}건
+              </span>
+            </div>
+          </div>
+
+          {completedPlans.length === 0 ? (
+            <div className="mt-3 rounded-2xl border border-dashed p-3" style={{ borderColor: G.line }}>
+              <p style={{ fontSize: 12, color: G.muted }}>
+                아직 확정된 플랜이 없어요. 잇깨비픽에서 여정을 확정하면 여기에 쌓입니다.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 mt-3">
+              {completedPlans.map((plan) => (
+                <article
+                  key={plan.id}
+                  className="rounded-2xl p-3 border flex items-center justify-between gap-2"
+                  style={{ borderColor: G.line, background: "#FBFDFC" }}
+                >
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 800, color: G.text }}>{plan.title}</p>
+                    <p style={{ fontSize: 11, color: G.muted }} className="mt-0.5">
+                      {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 11, fontWeight: 700, color: G.pointDeep }}>
+                      {formatDateLabel(plan.finalizedAt)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCompletedPlan(plan.id)}
+                      className="h-7 w-7 rounded-lg inline-flex items-center justify-center"
+                      style={{ background: "#F1F3F2", color: "#738078" }}
+                      aria-label="확정 플랜 삭제"
+                      title="삭제"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
@@ -360,7 +375,7 @@ export function TravelSketchbook() {
             <div>
               <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>여행 기록</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                사용자 기록 보관함
+                보따리 담기
               </h2>
             </div>
             <div className="h-7 px-2.5 rounded-lg inline-flex items-center" style={{ background: G.pointSoft }}>
@@ -405,53 +420,8 @@ export function TravelSketchbook() {
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>플랜 완료건</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                확정 플랜 내역
-              </h2>
-            </div>
-            <div className="h-7 px-2.5 rounded-lg inline-flex items-center" style={{ background: G.pointSoft }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>
-                {completedPlans.length}건
-              </span>
-            </div>
-          </div>
-
-          {completedPlans.length === 0 ? (
-            <div className="mt-3 rounded-2xl border border-dashed p-3" style={{ borderColor: G.line }}>
-              <p style={{ fontSize: 12, color: G.muted }}>
-                아직 확정된 플랜이 없어요. 잇깨비픽에서 여정을 확정하면 여기에 쌓입니다.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2 mt-3">
-              {completedPlans.map((plan) => (
-                <article
-                  key={plan.id}
-                  className="rounded-2xl p-3 border flex items-center justify-between"
-                  style={{ borderColor: G.line, background: "#FBFDFC" }}
-                >
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: G.text }}>{plan.title}</p>
-                    <p style={{ fontSize: 11, color: G.muted }} className="mt-0.5">
-                      {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: G.pointDeep }}>
-                    {formatDateLabel(plan.finalizedAt)}
-                  </span>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>3순위 · Mining</p>
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                조각 채굴 및 혜택 팝업
+                보물 찾기
               </h2>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: G.pointSoft }}>
@@ -499,41 +469,7 @@ export function TravelSketchbook() {
             </span>
           </div>
         </section>
-
-        <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>4순위 · Conquest Stats</p>
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                정복 지표 모니터링
-              </h2>
-            </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: G.pointSoft }}>
-              <CalendarClock size={16} style={{ color: G.pointDeep }} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>정복률</p>
-              <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                {conquestRate}%
-              </p>
-            </div>
-            <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>채굴 조각</p>
-              <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                {todayMinedCount}개
-              </p>
-            </div>
-            <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>누적 포인트</p>
-              <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
-                {todayMinedPoint}P
-              </p>
-            </div>
-          </div>
-        </section>
+        
       </div>
 
       {popupText && (

@@ -364,13 +364,15 @@ const togglePreference = (id: TastePreferenceId) => {
           >
             {step === 0 ? "시작하기" : "다음"}
           </button>
-          <button
-            onClick={() => navigate("/login", { state: { from: "/app/my" } })}
-            className="w-full mt-3 h-[48px] rounded-2xl border border-[#F0C070]/45 text-[#F0C070]"
-            style={{ fontSize: 14, fontWeight: 700 }}
-          >
-            로그인하고 시작하기
-          </button>
+          {step > 0 && (
+            <button
+              onClick={() => navigate("/login", { state: { from: "/app/my" } })}
+              className="w-full mt-3 h-[48px] rounded-2xl border border-[#F0C070]/45 text-[#F0C070]"
+              style={{ fontSize: 14, fontWeight: 700 }}
+            >
+              로그인하고 시작하기
+            </button>
+          )}
           <button
             onClick={() => navigate("/app")}
             className="w-full mt-3 text-white/20 text-center"

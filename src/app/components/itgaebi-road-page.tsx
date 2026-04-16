@@ -178,7 +178,7 @@ export function Home() {
         <section className="bg-white rounded-3xl p-4 border border-[#F0E6D0]">
           <SectionHeader
             title="여정탐색"
-            desc="에서 베스트 루틴을 바로 확인하세요"
+            desc="테마별 베스트 루틴을 바로 확인하세요"
             icon={Layers3}
           />
 

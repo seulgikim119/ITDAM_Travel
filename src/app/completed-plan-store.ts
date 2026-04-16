@@ -5,6 +5,7 @@ export type CompletedPlan = {
   sourceRoutineId: string | null;
   title: string;
   region: string;
+  travelDate?: string;
   totalStops: number;
   totalMinutes: number;
   finalizedAt: string;
@@ -46,6 +47,7 @@ export function saveCompletedPlan(input: SaveCompletedPlanInput): CompletedPlan[
     sourceRoutineId: input.sourceRoutineId,
     title: input.title,
     region: input.region,
+    travelDate: input.travelDate,
     totalStops: input.totalStops,
     totalMinutes: input.totalMinutes,
   };
@@ -56,3 +58,9 @@ export function saveCompletedPlan(input: SaveCompletedPlanInput): CompletedPlan[
   return next;
 }
 
+export function removeCompletedPlan(planId: string): CompletedPlan[] {
+  const current = readStorage();
+  const next = current.filter((plan) => plan.id !== planId);
+  writeStorage(next);
+  return next;
+}

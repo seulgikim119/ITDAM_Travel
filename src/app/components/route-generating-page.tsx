@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { Check, Loader2 } from "lucide-react";
@@ -18,7 +18,7 @@ type StepState = "done" | "active" | "pending";
 
 const STEPS: GenerationStep[] = [
   { label: "맛집 데이터 확인 완료", delay: 800 },
-  { label: "프로필 스냅 수집 완료", delay: 1800 },
+  { label: "로드맵 스냅 정보 수집 완료", delay: 1800 },
   { label: "동선 최적화 중...", delay: 2800 },
 ];
 
@@ -27,8 +27,8 @@ const REDIRECT_DELAY_MS = 4000;
 const REDIRECT_PATH = "/route-result";
 
 const HEADER_TEXT = "루트 생성 중";
-const BOT_MESSAGE = "루트를 잇는 중..";
-const SUBTITLE_TEXT = "장소를 잇는 중...";
+const BOT_MESSAGE = "루트를 다듬는 중";
+const SUBTITLE_TEXT = "장소와 동선을 최적화하고 있어요";
 
 function getStepState(done: boolean, isLast: boolean): StepState {
   if (done && !isLast) return "done";
@@ -89,7 +89,7 @@ export function RouteGenerating() {
         <h1 className="text-white text-center mb-2" style={{ fontSize: 22, fontWeight: 700 }}>
           {destination} 루트를
           <br />
-          이어붙이고 있어요
+          엮어붙이고 있어요
         </h1>
         <p className="text-[#E8A830] mb-10" style={{ fontSize: 14, fontWeight: 500 }}>
           {SUBTITLE_TEXT}
@@ -114,8 +114,8 @@ export function RouteGenerating() {
                     stepState === "done"
                       ? "bg-[#5DCAA5]/20"
                       : stepState === "active"
-                      ? "bg-[#E8A830]/20"
-                      : "bg-white/10"
+                        ? "bg-[#E8A830]/20"
+                        : "bg-white/10"
                   }`}
                 >
                   {stepState === "done" ? (
@@ -127,14 +127,16 @@ export function RouteGenerating() {
                   )}
                 </div>
                 <span
-                  className={`${
-                    stepState === "done"
-                      ? "text-white"
-                      : stepState === "active"
-                      ? "text-[#E8A830]"
-                      : "text-white/30"
-                  }`}
-                  style={{ fontSize: 15, fontWeight: 500 }}
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color:
+                      stepState === "done"
+                        ? "#FFFFFF"
+                        : stepState === "active"
+                          ? "#E8A830"
+                          : "rgba(255,255,255,0.3)",
+                  }}
                 >
                   {step.label}
                 </span>

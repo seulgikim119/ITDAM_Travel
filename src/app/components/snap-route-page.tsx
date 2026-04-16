@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Link2, Camera, Clock, Navigation, CheckCircle2 } from "lucide-react";
@@ -40,7 +40,6 @@ export function SnapRoute() {
 
   return (
     <div className="h-full flex flex-col bg-[#FFF8E7]">
-      {/* Header */}
       <div className="bg-white">
         <StatusBar />
         <div className="flex items-center px-4 py-2">
@@ -54,15 +53,15 @@ export function SnapRoute() {
       </div>
 
       <div className="flex-1 px-5 pt-5 overflow-y-auto">
-        {/* Title */}
         <h1 className="text-[#2C2C2A] mb-1" style={{ fontSize: 22, fontWeight: 700 }}>
-          링크 하나로<br />루트를 잇다
+          링크 하나로
+          <br />
+          루트를 뽑아드려요
         </h1>
         <p className="text-[#8E8E93] mb-6" style={{ fontSize: 14 }}>
-          URL이나 스크린샷으로 장소를 자동 수집해요
+          URL이나 스크린샷으로 장소를 자동 추출해요
         </p>
 
-        {/* URL Input */}
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-3">
           <div className="flex items-center gap-3 bg-[#FFF8E7] rounded-xl px-4 h-[48px] border border-transparent focus-within:border-[#F0C070]/30 transition-colors">
             <Link2 size={18} className="text-[#8E8E93]" />
@@ -84,7 +83,6 @@ export function SnapRoute() {
           </button>
         </div>
 
-        {/* Screenshot upload */}
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-5">
           <button className="w-full h-[64px] rounded-xl border-2 border-dashed border-[#F0E6D0] flex items-center justify-center gap-3 text-[#8E8E93] hover:border-[#F0C070]/50 hover:text-[#E8A830] transition-colors">
             <Camera size={20} />
@@ -92,7 +90,6 @@ export function SnapRoute() {
           </button>
         </div>
 
-        {/* Analysis Progress */}
         <AnimatePresence mode="wait">
           {analysisState === "analyzing" && (
             <motion.div
@@ -105,11 +102,14 @@ export function SnapRoute() {
               <div className="flex items-center gap-3 mb-4">
                 <Itgaebi size={72} />
                 <div>
-                  <p className="text-[#2C2C2A]" style={{ fontSize: 15, fontWeight: 600 }}>잇깨비가 분석 중...</p>
-                  <p className="text-[#8E8E93]" style={{ fontSize: 12 }}>링크에서 장소를 추출하고 있어요</p>
+                  <p className="text-[#2C2C2A]" style={{ fontSize: 15, fontWeight: 600 }}>
+                    잇깨비가 분석 중...
+                  </p>
+                  <p className="text-[#8E8E93]" style={{ fontSize: 12 }}>
+                    링크에서 장소와 동선을 추출하고 있어요
+                  </p>
                 </div>
               </div>
-              {/* Progress bar */}
               <div className="h-[6px] bg-[#FFF8E7] rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
@@ -119,42 +119,47 @@ export function SnapRoute() {
                   transition={{ duration: 0.1 }}
                 />
               </div>
-              <p className="text-[#8E8E93] text-right mt-1" style={{ fontSize: 11 }}>{progress}%</p>
+              <p className="text-[#8E8E93] text-right mt-1" style={{ fontSize: 11 }}>
+                {progress}%
+              </p>
             </motion.div>
           )}
 
           {analysisState === "done" && (
-            <motion.div
-              key="done"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
-            >
-              {/* Success banner */}
+            <motion.div key="done" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
               <div className="bg-[#5DCAA5]/10 rounded-2xl p-4 border border-[#5DCAA5]/20">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 size={18} className="text-[#5DCAA5]" />
-                  <span className="text-[#5DCAA5]" style={{ fontSize: 14, fontWeight: 600 }}>분석 완료!</span>
+                  <span className="text-[#5DCAA5]" style={{ fontSize: 14, fontWeight: 600 }}>
+                    분석 완료
+                  </span>
                 </div>
-                <p className="text-[#2C2C2A]" style={{ fontSize: 13 }}>3개의 장소가 자동 수집되었어요</p>
+                <p className="text-[#2C2C2A]" style={{ fontSize: 13 }}>
+                  3개의 장소가 자동으로 추출됐어요
+                </p>
               </div>
 
-              {/* Summary card */}
               <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Clock size={14} className="text-[#E8A830]" />
-                  <span className="text-[#E8A830]" style={{ fontSize: 13, fontWeight: 600 }}>기획 시간 70분 절감</span>
+                  <span className="text-[#E8A830]" style={{ fontSize: 13, fontWeight: 600 }}>
+                    기획 시간 70분 절감
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <Navigation size={14} className="text-[#F0C070]" />
-                  <span className="text-[#2C2C2A]" style={{ fontSize: 13, fontWeight: 600 }}>최적 경로: 한옥마을 → 경기전 → 성미당</span>
+                  <span className="text-[#2C2C2A]" style={{ fontSize: 13, fontWeight: 600 }}>
+                    최적 경로: 한옥마을 → 경기전 → 남부시장
+                  </span>
                 </div>
-                {/* Route preview */}
+
                 <div className="flex items-center gap-1">
-                  {["한옥마을", "경기전", "성미당"].map((place, i) => (
+                  {["한옥마을", "경기전", "남부시장"].map((place, i) => (
                     <div key={place} className="flex items-center gap-1">
                       <div className="px-3 py-1.5 rounded-lg bg-[#FFF8E7]">
-                        <span className="text-[#2C2C2A]" style={{ fontSize: 12, fontWeight: 500 }}>{place}</span>
+                        <span className="text-[#2C2C2A]" style={{ fontSize: 12, fontWeight: 500 }}>
+                          {place}
+                        </span>
                       </div>
                       {i < 2 && (
                         <div className="w-4 h-[2px] rounded-full" style={{ background: "linear-gradient(90deg, #F0C070, #E8A830)" }} />
@@ -164,13 +169,12 @@ export function SnapRoute() {
                 </div>
               </div>
 
-              {/* CTA */}
               <button
                 onClick={() => navigate("/route-result")}
                 className="w-full h-[48px] rounded-2xl text-[#2C2C2A] flex items-center justify-center gap-2 active:scale-[0.97] transition-transform"
                 style={{ fontSize: 15, fontWeight: 600, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
               >
-                이 루트로 잇기
+                내 루트로 가져오기
               </button>
             </motion.div>
           )}
