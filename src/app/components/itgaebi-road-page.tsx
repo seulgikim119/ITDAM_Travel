@@ -105,7 +105,7 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-full bg-[#FFF8E7] pb-6">
+    <div className={isLoggedIn ? "min-h-full bg-[#FFF8E7] pb-6" : "h-full bg-[#FFF8E7] overflow-hidden flex flex-col"}>
       <div className="bg-[#2C2C2A] rounded-b-[30px] pb-5 shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
         <StatusBar light />
         <div className="px-5 pt-1">
@@ -116,20 +116,31 @@ export function Home() {
             장소는 잇고, 추억은 담고, 인생은 더 넓은 여행
           </p>
 
-          {!isLoggedIn && (
-            <div className="mt-3 rounded-2xl border border-[#F0C070]/40 bg-[#F0C070]/12 px-3 py-2.5 flex items-center justify-between gap-2">
-              <p className="text-[#F4D08B]" style={{ fontSize: 14, fontWeight: 700 }}>
-                {GUEST_LOGIN_NOTICE}
-              </p>
-              <button
-                onClick={() => navigate("/login", { state: { from: "/app" } })}
-                className="h-8 px-3 rounded-xl bg-[#F0C070] text-[#2C2C2A]"
-                style={{ fontSize: 14, fontWeight: 800 }}
-              >
-                {LOGIN_BUTTON_TEXT}
-              </button>
+          <div className="mt-3">
+            <div className="grid grid-cols-3 gap-2">
+              {topStats.map((stat) => (
+                <div
+                  key={stat.id}
+                  className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <stat.icon size={12} className="text-[#F0C070]" />
+                    <span className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
+                      {stat.label}
+                    </span>
+                  </div>
+                  <div className="flex items-end gap-0.5">
+                    <span className="text-white" style={{ fontSize: 20, fontWeight: 800 }}>
+                      {stat.value}
+                    </span>
+                    <span className="text-white/50 mb-[2px]" style={{ fontSize: 14, fontWeight: 600 }}>
+                      {stat.unit}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
           {preferredTasteTags.length > 0 && (
             <div className="mt-3 rounded-2xl border border-[#F0C070]/35 bg-[#F0C070]/10 px-3 py-2.5">
@@ -153,40 +164,15 @@ export function Home() {
           )}
         </div>
 
-        <div className="px-4 mt-3">
-          <div className="grid grid-cols-3 gap-2">
-            {topStats.map((stat) => (
-              <div
-                key={stat.id}
-                className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5"
-              >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <stat.icon size={12} className="text-[#F0C070]" />
-                  <span className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
-                    {stat.label}
-                  </span>
-                </div>
-                <div className="flex items-end gap-0.5">
-                  <span className="text-white" style={{ fontSize: 20, fontWeight: 800 }}>
-                    {stat.value}
-                  </span>
-                  <span className="text-white/50 mb-[2px]" style={{ fontSize: 14, fontWeight: 600 }}>
-                    {stat.unit}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
-      <div className={`px-4 mt-3 flex gap-2 ${isLoggedIn ? "" : "pointer-events-none select-none blur-[3px] opacity-55"}`}>
+      <div className={isLoggedIn ? "px-4 mt-3 flex gap-2" : "hidden"}>
         <button
           onClick={() => navigate("/create-route")}
-          className="flex-1 h-[44px] rounded-2xl text-[#2C2C2A] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
-          style={{ fontSize: 16, fontWeight: 700, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
+          className="flex-1 h-[44px] rounded-2xl bg-[#F2F4F6] border border-[#E7E7E7] text-[#4E5968] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+          style={{ fontSize: 16, fontWeight: 700, }}
         >
-          <Zap size={15} />
+          <Zap size={15} className="text-[#E8A830]" />
           여행 잇기
         </button>
         <button
@@ -199,7 +185,7 @@ export function Home() {
         </button>
       </div>
 
-      <div className={`px-4 pt-4 space-y-4 ${isLoggedIn ? "" : "pointer-events-none select-none blur-[3px] opacity-55"}`}>
+      <div className={isLoggedIn ? "px-4 pt-4 space-y-4" : "hidden"}>
         <section className="bg-white rounded-3xl p-4 border border-[#F0E6D0]">
           <SectionHeader
             title="여정탐색"
@@ -216,9 +202,8 @@ export function Home() {
               <button
                 key={theme}
                 onClick={() => setSelectedTheme(theme)}
-                className={`h-9 px-4 rounded-full whitespace-nowrap ${
-                  selectedTheme === theme ? "text-white" : "bg-[#F2F4F6] text-[#4E5968]"
-                }`}
+                className={`h-9 px-4 rounded-full whitespace-nowrap ${selectedTheme === theme ? "text-white" : "bg-[#F2F4F6] text-[#4E5968]"
+                  }`}
                 style={{
                   fontSize: 14,
                   fontWeight: 700,
@@ -233,64 +218,89 @@ export function Home() {
             ))}
           </div>
 
-          <div className="mt-3 space-y-3">
-            {feedRoutines.map((routine) => (
-              <article key={routine.id} className="rounded-2xl border border-[#F0E6D0] overflow-hidden">
-                <div className="h-[132px] relative">
-                  <ImageWithFallback
-                    src={routine.image}
-                    alt={routine.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
-                  <div className="absolute left-3 top-3 px-2.5 py-1 rounded-lg bg-black/45 text-white" style={{ fontSize: 14, fontWeight: 700 }}>
-                    {routine.region} · {routine.theme}
+          <div className="mt-3 relative">
+            <div className={`space-y-3 ${isLoggedIn ? "" : "max-h-[520px] overflow-hidden"}`}>
+              {feedRoutines.map((routine) => (
+                <article key={routine.id} className="rounded-2xl border border-[#F0E6D0] overflow-hidden">
+                  <div className="h-[132px] relative">
+                    <ImageWithFallback
+                      src={routine.image}
+                      alt={routine.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
+                    <div className="absolute left-3 top-3 px-2.5 py-1 rounded-lg bg-black/45 text-white" style={{ fontSize: 14, fontWeight: 700 }}>
+                      {routine.region} · {routine.theme}
+                    </div>
+                    <div className="absolute left-3 bottom-3 text-white">
+                      <p style={{ fontSize: 17, fontWeight: 800 }}>{routine.title}</p>
+                    </div>
                   </div>
-                  <div className="absolute left-3 bottom-3 text-white">
-                    <p style={{ fontSize: 17, fontWeight: 800 }}>{routine.title}</p>
+
+                  <div className="p-3.5">
+                    <p className="text-[#4E5968] mb-2" style={{ fontSize: 14 }}>
+                      {routine.subtitle}
+                    </p>
+                    <p className="text-[#191F28] mb-3 truncate" style={{ fontSize: 14, fontWeight: 700 }}>
+                      경로: {routine.routeSummary}
+                    </p>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
+                        {routine.duration}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
+                        예산 {routine.budget}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
+                        클론 {routine.clones.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => navigate(`/routine/${routine.id}`)}
+                        className="flex-1 h-10 rounded-xl bg-[#F2F4F6] text-[#191F28]"
+                        style={{ fontSize: 14, fontWeight: 700 }}
+                      >
+                        상세 보기
+                      </button>
+                      <button
+                        onClick={() => handleClone(routine.id)}
+                        className="flex-1 h-10 rounded-xl text-white flex items-center justify-center gap-1.5"
+                        style={{ fontSize: 14, fontWeight: 700, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
+                      >
+                        <BookmarkPlus size={14} />
+                        {isRoutineCloned(routine.id) ? "담김" : "클로닝"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {!isLoggedIn && (
+              <>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[170px] rounded-b-2xl bg-gradient-to-b from-[rgba(255,248,231,0)] via-[rgba(255,248,231,0.64)] to-[rgba(255,248,231,0.96)] backdrop-blur-[5px]" />
+                <div className="absolute inset-x-0 top-[210px] px-3 flex justify-center">
+                  <div className="w-full max-w-[296px] rounded-2xl border border-[#F0C070]/45 bg-white/88 backdrop-blur-[8px] px-4 py-3 shadow-[0_10px_26px_rgba(44,44,42,0.16)]">
+                    <p className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 800 }}>
+                      {GUEST_LOGIN_NOTICE}
+                    </p>
+                    <p className="text-[#6B7684] mt-1" style={{ fontSize: 14 }}>
+                      Login to unlock the full route feed.
+                    </p>
+                    <button
+                      onClick={() => navigate("/login", { state: { from: "/app" } })}
+                      className="w-full mt-3 h-9 rounded-xl bg-[#F0C070] text-[#2C2C2A] active:scale-[0.98] transition-transform"
+                      style={{ fontSize: 14, fontWeight: 800 }}
+                    >
+                      {LOGIN_BUTTON_TEXT}
+                    </button>
                   </div>
                 </div>
-
-                <div className="p-3.5">
-                  <p className="text-[#4E5968] mb-2" style={{ fontSize: 14 }}>
-                    {routine.subtitle}
-                  </p>
-                  <p className="text-[#191F28] mb-3 truncate" style={{ fontSize: 14, fontWeight: 700 }}>
-                    경로: {routine.routeSummary}
-                  </p>
-
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
-                      {routine.duration}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
-                      예산 {routine.budget}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-lg bg-[#F2F4F6] text-[#4E5968]" style={{ fontSize: 14, fontWeight: 700 }}>
-                      클론 {routine.clones.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/routine/${routine.id}`)}
-                      className="flex-1 h-10 rounded-xl bg-[#F2F4F6] text-[#191F28]"
-                      style={{ fontSize: 14, fontWeight: 700 }}
-                    >
-                      상세 보기
-                    </button>
-                    <button
-                      onClick={() => handleClone(routine.id)}
-                      className="flex-1 h-10 rounded-xl text-white flex items-center justify-center gap-1.5"
-                      style={{ fontSize: 14, fontWeight: 700, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
-                    >
-                      <BookmarkPlus size={14} />
-                      {isRoutineCloned(routine.id) ? "담김" : "클로닝"}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+              </>
+            )}
           </div>
         </section>
 
@@ -393,7 +403,34 @@ export function Home() {
           </div>
         </section>
       </div>
+
+      {!isLoggedIn && (
+        <div className="px-4 mt-3 pb-4 flex-1">
+          <div className="relative h-full min-h-[420px] rounded-3xl overflow-hidden border border-[#F0E6D0]">
+            <div className="absolute inset-0 bg-gradient-to-b from-[rgba(255,255,255,0.35)] via-[rgba(255,248,231,0.72)] to-[rgba(255,248,231,0.96)] backdrop-blur-[10px]" />
+            <div className="absolute -top-8 -left-8 w-40 h-40 rounded-full bg-[#F0C070]/28 blur-2xl" />
+            <div className="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-[#E8A830]/22 blur-2xl" />
+
+            <div className="absolute inset-0 flex items-center justify-center px-4">
+              <div className="w-full max-w-[296px] rounded-2xl border border-[#F0C070]/45 bg-white/88 backdrop-blur-[8px] px-4 py-3 shadow-[0_10px_26px_rgba(44,44,42,0.16)]">
+                <p className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 800 }}>
+                  {GUEST_LOGIN_NOTICE}
+                </p>
+                <p className="text-[#6B7684] mt-1" style={{ fontSize: 14 }}>
+                  로그인하면 추천 여정과 탐색 피드를 이어서 볼 수 있어요.
+                </p>
+                <button
+                  onClick={() => navigate("/login", { state: { from: "/app" } })}
+                  className="w-full mt-3 h-9 rounded-xl bg-[#F0C070] text-[#2C2C2A] active:scale-[0.98] transition-transform"
+                  style={{ fontSize: 14, fontWeight: 800 }}
+                >
+                  {LOGIN_BUTTON_TEXT}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

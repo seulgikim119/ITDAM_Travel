@@ -12,6 +12,8 @@ type GenerationStep = {
 
 type RouteGeneratingLocationState = {
   destination?: string;
+  selectedDuration?: string | null;
+  selectedGroup?: string | null;
 };
 
 type StepState = "done" | "active" | "pending";
@@ -56,14 +58,14 @@ export function RouteGenerating() {
     });
 
     const redirectTimeoutId = window.setTimeout(() => {
-      navigate(REDIRECT_PATH);
+      navigate(REDIRECT_PATH, { state: routeState ?? undefined });
     }, REDIRECT_DELAY_MS);
     timeoutIds.push(redirectTimeoutId);
 
     return () => {
       timeoutIds.forEach((id) => window.clearTimeout(id));
     };
-  }, [navigate]);
+  }, [navigate, routeState]);
 
   return (
     <div className="h-full flex flex-col bg-[#2C2C2A]">

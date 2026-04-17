@@ -14,7 +14,7 @@ export type AuthState = {
 
 function readUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const raw = window.sessionStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
 
   try {
@@ -29,9 +29,9 @@ function readUser(): AuthUser | null {
 function writeUser(user: AuthUser | null) {
   if (typeof window === "undefined") return;
   if (!user) {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
   } else {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   }
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }
@@ -70,4 +70,3 @@ export function subscribeAuth(listener: () => void): () => void {
     window.removeEventListener("storage", handler);
   };
 }
-

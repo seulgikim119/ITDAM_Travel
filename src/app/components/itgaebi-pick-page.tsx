@@ -1,15 +1,19 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   ArrowUpDown,
+  Bike,
+  CarFront,
   Check,
   ClipboardList,
+  Footprints,
   Gift,
   GripVertical,
   Link2,
   MapPin,
   Navigation,
   Sparkles,
+  TrainFront,
   Trash2,
   WandSparkles,
 } from "lucide-react";
@@ -26,6 +30,8 @@ type DraftStop = {
   duration: number;
   tip: string;
   memo: string;
+  kind: "base" | "suggested";
+  sourceKey?: string;
 };
 
 type BenefitItem = {
@@ -48,6 +54,34 @@ type RouteSuggestionTemplate = {
   tip: string;
 };
 
+type FlyingSuggestion = {
+  id: number;
+  label: string;
+  category: SuggestionCategory;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  width: number;
+  height: number;
+  flying: boolean;
+};
+
+type TransportTheme = "균형" | "도보 중심" | "빠른 이동";
+type TransportModeId = "walk" | "bike" | "transit" | "taxi";
+
+type TransportOption = {
+  id: TransportModeId;
+  label: string;
+  hint: string;
+  score: number;
+};
+
+type SuggestionBenefitBadge = {
+  label: string;
+  strong?: boolean;
+};
+
 const Y = {
   bg: "#F5F5F7",
   card: "#FFFFFF",
@@ -68,6 +102,7 @@ const fallbackStops: DraftStop[] = [
     duration: 80,
     tip: "오픈 시간 30분 이내에 도착하면 대기 없이 입장하기 좋아요.",
     memo: "브런치 먼저 방문",
+    kind: "base",
   },
   {
     id: "fallback-2",
@@ -75,6 +110,7 @@ const fallbackStops: DraftStop[] = [
     duration: 70,
     tip: "주차가 혼잡해지기 전, 오전 시간대 방문을 추천해요.",
     memo: "이동 동선 연결",
+    kind: "base",
   },
   {
     id: "fallback-3",
@@ -82,6 +118,7 @@ const fallbackStops: DraftStop[] = [
     duration: 60,
     tip: "마감 1시간 전에는 입장 제한이 있을 수 있어요.",
     memo: "휴식 시간 체크",
+    kind: "base",
   },
 ];
 
@@ -172,6 +209,76 @@ const suggestionTone: Record<SuggestionCategory, { bg: string; text: string }> =
   체험: { bg: "#EAF9EC", text: "#2A8D49" },
 };
 
+const suggestionCategoryLabel: Record<SuggestionCategory, string> = {
+  밥집: "밥집",
+  카페: "카페",
+  체험: "체험",
+};
+
+const suggestionBenefitBadgeMap: Partial<Record<RouteSuggestionTemplate["id"], SuggestionBenefitBadge>> = {
+  "food-local": { label: "혜택있담! 💰" },
+  "food-noodle": { label: "쿠폰있깨비! 🎫", strong: true },
+  "cafe-break": { label: "1+1 ☕" },
+  "cafe-dessert": { label: "쿠폰있깨비! 🎫", strong: true },
+};
+
+const transportThemeOptions: TransportTheme[] = ["균형", "도보 중심", "빠른 이동"];
+
+function buildTransportOptions(distance: number, theme: TransportTheme): TransportOption[] {
+  const baseScore: Record<TransportModeId, number> =
+    distance < 3
+      ? { walk: 95, bike: 72, transit: 58, taxi: 42 }
+      : distance < 8
+        ? { walk: 46, bike: 92, transit: 78, taxi: 66 }
+        : { walk: 22, bike: 48, transit: 93, taxi: 88 };
+
+  const themeWeight: Record<TransportTheme, Record<TransportModeId, number>> = {
+    균형: { walk: 0, bike: 0, transit: 0, taxi: 0 },
+    "도보 중심": { walk: 20, bike: 10, transit: -8, taxi: -12 },
+    "빠른 이동": { walk: -15, bike: -6, transit: 16, taxi: 18 },
+  };
+
+  const modeMeta: Record<TransportModeId, { label: string; hint: string }> = {
+    walk: { label: "도보", hint: "짧은 거리에서 유리해요" },
+    bike: { label: "자전거", hint: "중거리 이동에 좋아요" },
+    transit: { label: "대중교통", hint: "장거리/도심 구간에 적합해요" },
+    taxi: { label: "택시/차량", hint: "시간 절약이 필요할 때 좋아요" },
+  };
+
+  return (Object.keys(modeMeta) as TransportModeId[])
+    .map((modeId) => {
+      const weightedScore = Math.min(99, Math.max(1, baseScore[modeId] + themeWeight[theme][modeId]));
+      return {
+        id: modeId,
+        label: modeMeta[modeId].label,
+        hint: modeMeta[modeId].hint,
+        score: weightedScore,
+      };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+function getTransportMoveMultiplier(modeId: TransportModeId, distance: number) {
+  if (modeId === "walk") {
+    if (distance < 3) return 1;
+    if (distance < 8) return 1.3;
+    return 1.6;
+  }
+  if (modeId === "bike") {
+    if (distance < 3) return 0.85;
+    if (distance < 8) return 0.9;
+    return 1.05;
+  }
+  if (modeId === "transit") {
+    if (distance < 3) return 1.15;
+    if (distance < 8) return 0.85;
+    return 0.78;
+  }
+  if (distance < 3) return 1.08;
+  if (distance < 8) return 0.8;
+  return 0.68;
+}
+
 function toDraftStops(routine: Routine | null): DraftStop[] {
   if (!routine || routine.stops.length === 0) {
     return fallbackStops;
@@ -186,6 +293,7 @@ function toDraftStops(routine: Routine | null): DraftStop[] {
         ? "오픈 직후 방문하면 사진 촬영과 동선 확보가 쉬워요."
         : "이동 전 주차와 편의시설 위치를 먼저 확인해 두세요.",
     memo: stop.note,
+    kind: "base",
   }));
 }
 
@@ -208,6 +316,13 @@ function toHourMinute(totalMinute: number) {
   return `${hour}시간 ${minute}분`;
 }
 
+function toClockText(totalMinute: number) {
+  const safe = Math.max(totalMinute, 0);
+  const hour = Math.floor(safe / 60) % 24;
+  const minute = safe % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
 function getTodayISODate() {
   const now = new Date();
   const year = now.getFullYear();
@@ -219,6 +334,7 @@ function getTodayISODate() {
 export function SavedPlaces() {
   const navigate = useNavigate();
   const savedRoutinesDrag = useMouseDragScroll<HTMLDivElement>();
+  const timelineDropAnchorRef = useRef<HTMLDivElement | null>(null);
   const [savedRoutines, setSavedRoutines] = useState<Routine[]>([]);
   const [activeRoutineId, setActiveRoutineId] = useState<string | null>(null);
   const [draftStops, setDraftStops] = useState<DraftStop[]>(fallbackStops);
@@ -226,7 +342,10 @@ export function SavedPlaces() {
   const [selectedStopId, setSelectedStopId] = useState<string | null>(fallbackStops[0].id);
   const [reservedBenefitIds, setReservedBenefitIds] = useState<string[]>([]);
   const [addedSuggestionKeys, setAddedSuggestionKeys] = useState<string[]>([]);
+  const [flyingSuggestion, setFlyingSuggestion] = useState<FlyingSuggestion | null>(null);
   const [travelDate, setTravelDate] = useState<string>(getTodayISODate());
+  const [selectedTransportTheme, setSelectedTransportTheme] = useState<TransportTheme>("균형");
+  const [selectedTransportModeId, setSelectedTransportModeId] = useState<TransportModeId | null>(null);
 
   useEffect(() => {
     const loaded = getClonedRoutines();
@@ -243,6 +362,7 @@ export function SavedPlaces() {
     const nextStops = toDraftStops(activeRoutine);
     setDraftStops(nextStops);
     setSelectedStopId(nextStops[0]?.id ?? null);
+    setAddedSuggestionKeys([]);
   }, [activeRoutine]);
 
   const selectedStop = useMemo(
@@ -262,18 +382,78 @@ export function SavedPlaces() {
     return Number((base + complexity).toFixed(1));
   }, [draftStops]);
 
+  const savedMinutes = useMemo(() => {
+    const routeOptimizeBonus = addedSuggestionKeys.length * 7;
+    const timelineBonus = Math.max(0, draftStops.length - 3) * 2;
+    return routeOptimizeBonus + timelineBonus;
+  }, [addedSuggestionKeys.length, draftStops.length]);
+
+  const transportOptions = useMemo(
+    () => buildTransportOptions(estimatedDistance, selectedTransportTheme),
+    [estimatedDistance, selectedTransportTheme]
+  );
+
+  useEffect(() => {
+    if (transportOptions.length === 0) {
+      setSelectedTransportModeId(null);
+      return;
+    }
+    setSelectedTransportModeId((prev) =>
+      prev && transportOptions.some((option) => option.id === prev) ? prev : transportOptions[0].id
+    );
+  }, [transportOptions]);
+
+  const selectedTransportOption = useMemo(
+    () => transportOptions.find((option) => option.id === selectedTransportModeId) ?? transportOptions[0] ?? null,
+    [transportOptions, selectedTransportModeId]
+  );
+
   const estimatedMoveMinutes = useMemo(() => {
     const edges = Math.max(draftStops.length - 1, 0);
-    return Math.round(edges * 18 + estimatedDistance * 4);
-  }, [draftStops, estimatedDistance]);
+    const baseMoveMinutes = edges * 18 + estimatedDistance * 4;
+    const fallbackModeId: TransportModeId =
+      estimatedDistance < 3 ? "walk" : estimatedDistance < 8 ? "bike" : "transit";
+    const modeId = selectedTransportOption?.id ?? fallbackModeId;
+    const multiplier = getTransportMoveMultiplier(modeId, estimatedDistance);
+    return Math.max(Math.round(baseMoveMinutes * multiplier), edges * 8);
+  }, [draftStops, estimatedDistance, selectedTransportOption?.id]);
 
   const estimatedTotalMinutes = totalStayMinutes + estimatedMoveMinutes;
 
-  const transportSuggestion = useMemo(() => {
-    if (estimatedDistance < 3) return "도보 + 지하철 연계 이동";
-    if (estimatedDistance < 8) return "자전거 + 도보";
-    return "대중교통 + 도보";
-  }, [estimatedDistance]);
+  const ticketMoveMinutesByEdge = useMemo(() => {
+    const edgeCount = Math.max(draftStops.length - 1, 0);
+    if (edgeCount === 0) return [];
+    const base = Math.floor(estimatedMoveMinutes / edgeCount);
+    const remainder = estimatedMoveMinutes - base * edgeCount;
+    return Array.from({ length: edgeCount }, (_, index) => base + (index < remainder ? 1 : 0));
+  }, [draftStops.length, estimatedMoveMinutes]);
+
+  const ticketTimelineRows = useMemo(() => {
+    const dayStartMinute = 9 * 60;
+    let cursor = dayStartMinute;
+    return draftStops.map((stop, index) => {
+      const arrivalMinute = cursor;
+      cursor += stop.duration;
+      const moveMinuteToNext = ticketMoveMinutesByEdge[index] ?? 0;
+      cursor += moveMinuteToNext;
+      return {
+        stop,
+        index,
+        arrivalMinute,
+        moveMinuteToNext,
+        hasNext: index < draftStops.length - 1,
+      };
+    });
+  }, [draftStops, ticketMoveMinutesByEdge]);
+
+  const ticketMapStops = useMemo(() => draftStops.slice(0, 5), [draftStops]);
+
+  const selectedTransportMeta = useMemo(() => {
+    if (selectedTransportOption?.id === "walk") return { label: "도보", Icon: Footprints };
+    if (selectedTransportOption?.id === "bike") return { label: "자전거", Icon: Bike };
+    if (selectedTransportOption?.id === "transit") return { label: "대중교통", Icon: TrainFront };
+    return { label: "택시/차량", Icon: CarFront };
+  }, [selectedTransportOption?.id]);
 
   const reservedBenefits = useMemo(
     () => benefitCatalog.filter((benefit) => reservedBenefitIds.includes(benefit.id)),
@@ -293,21 +473,26 @@ export function SavedPlaces() {
   }, [draftStops.length, reservedBenefits.length]);
 
   const segmentSuggestions = useMemo(() => {
-    if (draftStops.length < 2) return [];
+    const baseStopsWithIndex = draftStops
+      .map((stop, index) => ({ stop, index }))
+      .filter(({ stop }) => stop.kind === "base");
+    if (baseStopsWithIndex.length < 2) return [];
 
-    return draftStops.slice(0, -1).map((from, index) => {
-      const to = draftStops[index + 1];
+    return baseStopsWithIndex.slice(0, -1).map(({ stop: from }, index) => {
+      const { stop: to, index: insertAt } = baseStopsWithIndex[index + 1];
       const segmentId = `${from.id}->${to.id}`;
       const picked = [0, 1, 2].map(
         (offset) => routeSuggestionTemplates[(index + offset) % routeSuggestionTemplates.length]
       );
-      const suggestions = picked.map((template, order) => ({
+      const suggestions = picked.map((template) => ({
         ...template,
-        id: `${template.id}-${index}-${order}`,
+        id: template.id,
       }));
-      return { segmentId, from, to, suggestions };
+      const selectedKeys = addedSuggestionKeys.filter((key) => key.startsWith(`${segmentId}:`));
+      const selectedKey = selectedKeys[0] ?? null;
+      return { segmentId, from, to, insertAt, suggestions, selectedKey, selectedKeys };
     });
-  }, [draftStops]);
+  }, [draftStops, addedSuggestionKeys]);
 
   const toggleBenefit = (benefitId: string) => {
     setReservedBenefitIds((prev) =>
@@ -338,13 +523,56 @@ export function SavedPlaces() {
     );
   };
 
+  const maxSelectablePerSegment = 3;
+
   const handleAddSuggestionStop = (
-    segmentIndex: number,
+    insertAt: number,
     segmentId: string,
-    suggestion: RouteSuggestionTemplate
+    suggestion: RouteSuggestionTemplate,
+    sourceElement?: HTMLElement | null
   ) => {
     const addKey = `${segmentId}:${suggestion.id}`;
-    if (addedSuggestionKeys.includes(addKey)) return;
+
+    if (addedSuggestionKeys.includes(addKey)) {
+      const removedStop = draftStops.find((stop) => stop.kind === "suggested" && stop.sourceKey === addKey);
+      setDraftStops((prev) => prev.filter((stop) => !(stop.kind === "suggested" && stop.sourceKey === addKey)));
+      setAddedSuggestionKeys((prev) => prev.filter((key) => key !== addKey));
+      if (removedStop && selectedStopId === removedStop.id) {
+        setSelectedStopId(null);
+      }
+      return;
+    }
+
+    const selectedCountInSegment = addedSuggestionKeys.filter((key) =>
+      key.startsWith(`${segmentId}:`)
+    ).length;
+    if (selectedCountInSegment >= maxSelectablePerSegment) {
+      return;
+    }
+
+    const fromRect = sourceElement?.getBoundingClientRect();
+    const toRect = timelineDropAnchorRef.current?.getBoundingClientRect();
+    if (fromRect && toRect) {
+      const nextFlying: FlyingSuggestion = {
+        id: Date.now(),
+        label: suggestion.name,
+        category: suggestion.category,
+        fromX: fromRect.left,
+        fromY: fromRect.top,
+        toX: toRect.left + toRect.width / 2 - fromRect.width / 2,
+        toY: toRect.top + toRect.height / 2 - fromRect.height / 2,
+        width: fromRect.width,
+        height: fromRect.height,
+        flying: false,
+      };
+      setFlyingSuggestion(nextFlying);
+      requestAnimationFrame(() => {
+        setFlyingSuggestion((prev) => (prev ? { ...prev, flying: true } : prev));
+      });
+      window.setTimeout(() => {
+        setFlyingSuggestion((prev) => (prev?.id === nextFlying.id ? null : prev));
+      }, 540);
+    }
 
     const insertedId = `suggest-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const insertedStop: DraftStop = {
@@ -353,12 +581,14 @@ export function SavedPlaces() {
       duration: suggestion.duration,
       tip: suggestion.tip,
       memo: suggestion.memo,
+      kind: "suggested",
+      sourceKey: addKey,
     };
 
     setDraftStops((prev) => {
       const next = [...prev];
-      const insertAt = Math.min(segmentIndex + 1, next.length);
-      next.splice(insertAt, 0, insertedStop);
+      const safeInsertAt = Math.min(Math.max(insertAt, 0), next.length);
+      next.splice(safeInsertAt, 0, insertedStop);
       return next;
     });
     setAddedSuggestionKeys((prev) => [...prev, addKey]);
@@ -420,8 +650,8 @@ export function SavedPlaces() {
         </div>
       </div>
 
-      <div className="px-4 pt-4 space-y-4">
-        <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
+      <div className="px-4 pt-4 flex flex-col gap-4">
+        <section className="rounded-3xl p-4 border order-1" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
               <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Input & Clone</p>
@@ -519,10 +749,14 @@ export function SavedPlaces() {
           )}
         </section>
 
-        <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
+        <section className="relative rounded-3xl p-4 border order-1" style={{ background: Y.card, borderColor: Y.line }}>
+          <div
+            ref={timelineDropAnchorRef}
+            className="pointer-events-none absolute left-1/2 top-[86px] h-2 w-2 -translate-x-1/2"
+          />
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Smart Editing</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>여정 다듬기</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 지능형 타임라인 편집
               </h2>
@@ -539,6 +773,7 @@ export function SavedPlaces() {
           <div className="mt-3 space-y-2">
             {draftStops.map((stop, idx) => {
               const active = stop.id === selectedStopId;
+              const suggestedStop = stop.kind === "suggested";
               return (
                 <article
                   key={stop.id}
@@ -554,8 +789,10 @@ export function SavedPlaces() {
                   onClick={() => setSelectedStopId(stop.id)}
                   className="rounded-2xl border p-3 flex items-center gap-3 cursor-move transition-colors"
                   style={{
-                    borderColor: active ? Y.pointDeep : Y.line,
-                    background: active ? "#FFFDF2" : "#FFFFFF",
+                    borderColor: active ? Y.pointDeep : suggestedStop ? "#EFD6A1" : "#E6E0D3",
+                    background: active ? "#FFF4CF" : suggestedStop ? "#FFF7DF" : "#FFFDF2",
+                    boxShadow: "0 8px 16px rgba(18,18,18,0.06)",
+                    transform: `rotate(${idx % 2 === 0 ? "-0.45deg" : "0.45deg"})`,
                   }}
                 >
                   <div
@@ -571,6 +808,14 @@ export function SavedPlaces() {
                     <p style={{ fontSize: 14, color: Y.muted }} className="truncate">
                       체류 {stop.duration}분 · {stop.memo}
                     </p>
+                    {suggestedStop && (
+                      <span
+                        className="mt-1 h-5 px-2 rounded-full inline-flex items-center"
+                        style={{ background: "#FFE8A7", color: "#8A5B00", fontSize: 12, fontWeight: 800 }}
+                      >
+                        PICK
+                      </span>
+                    )}
                   </div>
                   <GripVertical size={16} color="#9AA0A6" />
                 </article>
@@ -612,10 +857,10 @@ export function SavedPlaces() {
           )}
         </section>
 
-        <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
+        <section className="rounded-3xl p-4 border order-2" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Route Assist</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>잇깨비의 틈새 추천</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 가는 길 추천 일정 추가
               </h2>
@@ -627,6 +872,9 @@ export function SavedPlaces() {
 
           <p style={{ fontSize: 14, color: Y.muted }} className="mt-2">
             동선 사이사이에 들를 만한 밥집, 카페, 체험활동을 추천해드려요. 마음에 들면 바로 일정에 넣을 수 있어요.
+          </p>
+          <p style={{ fontSize: 14, color: Y.pointText, fontWeight: 700 }} className="mt-1">
+            카드를 누르면 즉시 타임라인에 합쳐지고 스탬프 피드백이 표시돼요.
           </p>
 
           {segmentSuggestions.length === 0 ? (
@@ -653,51 +901,160 @@ export function SavedPlaces() {
                   <div className="space-y-2 mt-2">
                     {segment.suggestions.map((suggestion) => {
                       const addKey = `${segment.segmentId}:${suggestion.id}`;
-                      const added = addedSuggestionKeys.includes(addKey);
+                      const added = segment.selectedKeys.includes(addKey);
+                      const segmentLocked =
+                        !added && segment.selectedKeys.length >= maxSelectablePerSegment;
+                      const stampLabel = segmentIndex % 2 === 0 ? "PICK!" : "잇기 완료!";
+                      const benefitBadge = suggestionBenefitBadgeMap[suggestion.id];
+                      const strongBenefit = Boolean(benefitBadge?.strong);
                       return (
                         <div
                           key={suggestion.id}
-                          className="rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2"
-                          style={{ borderColor: Y.line, background: "#FFFFFF" }}
+                          role="button"
+                          tabIndex={0}
+                          onClick={(event) => {
+                            if (segmentLocked) return;
+                            handleAddSuggestionStop(
+                              segment.insertAt,
+                              segment.segmentId,
+                              suggestion,
+                              event.currentTarget
+                            );
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key !== "Enter" && event.key !== " ") return;
+                            event.preventDefault();
+                            if (segmentLocked) return;
+                            handleAddSuggestionStop(
+                              segment.insertAt,
+                              segment.segmentId,
+                              suggestion,
+                              event.currentTarget as HTMLElement
+                            );
+                          }}
+                          className="relative overflow-hidden rounded-xl border px-3 py-2.5 cursor-pointer transition-all"
+                          style={{
+                            borderColor: added
+                              ? Y.pointDeep
+                              : strongBenefit
+                                ? "#E0BE72"
+                                : segmentLocked
+                                  ? "#DADDE2"
+                                  : Y.line,
+                            background: added
+                              ? "#FFF7D8"
+                              : strongBenefit
+                                ? "linear-gradient(135deg, #FFFDF6 0%, #FFF6DB 72%, #FFF2CF 100%)"
+                                : segmentLocked
+                                  ? "#F4F6F8"
+                                  : "#FFFFFF",
+                            boxShadow: added
+                              ? "0 0 0 1px rgba(232,168,48,0.4), 0 8px 20px rgba(240,192,112,0.2)"
+                              : strongBenefit
+                                ? "0 0 0 1px rgba(224,190,114,0.35), inset 0 0 0 1px rgba(255,247,214,0.62)"
+                              : "none",
+                            opacity: segmentLocked ? 0.56 : 1,
+                          }}
                         >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
+                          {strongBenefit && (
+                            <div
+                              className="pointer-events-none absolute inset-0"
+                              style={{
+                                background:
+                                  "linear-gradient(110deg, rgba(255,255,255,0.18) 0%, rgba(255,240,194,0.35) 36%, rgba(255,255,255,0.14) 72%)",
+                              }}
+                            />
+                          )}
+                          {benefitBadge && (
+                            <div className="pointer-events-none absolute right-2 top-2 z-[2]">
                               <span
-                                className="h-5 px-2 rounded-full inline-flex items-center"
+                                className="h-6 px-2 rounded-full inline-flex items-center gap-1 border"
                                 style={{
-                                  background: suggestionTone[suggestion.category].bg,
-                                  color: suggestionTone[suggestion.category].text,
-                                  fontSize: 14,
-                                  fontWeight: 800,
+                                  borderColor: strongBenefit ? "#E8B85A" : "#E8C374",
+                                  background: strongBenefit ? "#FFE7A9" : "#FFFFFF",
+                                  color: strongBenefit ? "#8A5B00" : "#9A6A16",
+                                  fontSize: 11,
+                                  fontWeight: 900,
                                 }}
                               >
-                                {suggestion.category}
+                                {strongBenefit && <Sparkles size={11} color="#8A5B00" />}
+                                {benefitBadge.label}
                               </span>
-                              <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="truncate">
-                                {suggestion.name}
+                            </div>
+                          )}
+                          <div className="relative z-[1] flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="h-5 px-2 rounded-full inline-flex items-center"
+                                  style={{
+                                    background: suggestionTone[suggestion.category].bg,
+                                    color: suggestionTone[suggestion.category].text,
+                                    fontSize: 14,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {suggestionCategoryLabel[suggestion.category]}
+                                </span>
+                                <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="truncate">
+                                  {suggestion.name}
+                                </p>
+                              </div>
+                              <p style={{ fontSize: 14, color: Y.muted }} className="truncate mt-0.5">
+                                {suggestion.desc} · {suggestion.duration}분
                               </p>
                             </div>
-                            <p style={{ fontSize: 14, color: Y.muted }} className="truncate mt-0.5">
-                              {suggestion.desc} · {suggestion.duration}분
-                            </p>
+
+                            <div className="flex flex-col items-end justify-between gap-2">
+                              <MapPin
+                                size={16}
+                                color={added ? Y.pointText : segmentLocked ? "#B4BAC2" : "#9AA0A6"}
+                                fill={added ? Y.pointDeep : "transparent"}
+                              />
+                              <span
+                                className="h-7 px-2 rounded-lg inline-flex items-center border"
+                                style={{
+                                  borderColor: added ? Y.pointDeep : segmentLocked ? "#DADDE2" : Y.line,
+                                  background: added ? "#FFF1C7" : segmentLocked ? "#ECEFF2" : "#FFF8E9",
+                                  color: added ? Y.pointText : segmentLocked ? "#8D949E" : "#916825",
+                                  fontSize: 13,
+                                  fontWeight: 800,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {added ? "합류 완료" : segmentLocked ? "선택 완료" : "탭해서 추가"}
+                              </span>
+                            </div>
                           </div>
 
-                          <button
-                            type="button"
-                            disabled={added}
-                            onClick={() => handleAddSuggestionStop(segmentIndex, segment.segmentId, suggestion)}
-                            className="h-8 px-2.5 rounded-lg border disabled:opacity-55"
-                            style={{
-                              borderColor: added ? "#D4D8DE" : Y.pointDeep,
-                              background: added ? "#F3F5F7" : "#FFF8E9",
-                              color: added ? "#8C929A" : Y.pointText,
-                              fontSize: 14,
-                              fontWeight: 800,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {added ? "추가됨" : "일정에 추가"}
-                          </button>
+                          {added && (
+                            <>
+                              <div
+                                className="pointer-events-none absolute inset-0"
+                                style={{
+                                  background:
+                                    "linear-gradient(115deg, rgba(255,247,214,0.2) 0%, rgba(240,192,112,0.18) 100%)",
+                                }}
+                              />
+                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                <span
+                                  className="px-3 py-1 rounded-full border-2"
+                                  style={{
+                                    borderColor: "rgba(184,121,20,0.45)",
+                                    color: "rgba(184,121,20,0.82)",
+                                    background: "rgba(255,244,205,0.76)",
+                                    transform: "rotate(-11deg)",
+                                    fontSize: 13,
+                                    fontWeight: 900,
+                                    letterSpacing: 0.4,
+                                    boxShadow: "0 0 22px rgba(232,168,48,0.32)",
+                                  }}
+                                >
+                                  {stampLabel}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       );
                     })}
@@ -728,15 +1085,233 @@ export function SavedPlaces() {
             </div>
           </div>
 
-          <div className="mt-2 h-9 px-3 rounded-xl inline-flex items-center gap-2" style={{ background: Y.pointSoft }}>
-            <MapPin size={13} color={Y.pointText} />
-            <span style={{ fontSize: 14, color: Y.pointText, fontWeight: 800 }}>
-              이동 수단 추천: {transportSuggestion}
-            </span>
+          <div className="mt-2 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
+            <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>이동 수단 테마</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {transportThemeOptions.map((theme) => {
+                const active = theme === selectedTransportTheme;
+                return (
+                  <button
+                    key={theme}
+                    type="button"
+                    onClick={() => setSelectedTransportTheme(theme)}
+                    className="h-9 rounded-xl border transition-colors"
+                    style={{
+                      borderColor: active ? Y.pointDeep : Y.line,
+                      background: active ? "#FFF1C7" : "#FFFFFF",
+                      color: active ? Y.pointText : Y.text,
+                      fontSize: 13,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {theme}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-2 space-y-2">
+              {transportOptions.map((option) => {
+                const active = option.id === selectedTransportOption?.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setSelectedTransportModeId(option.id)}
+                    className="w-full rounded-xl border px-3 py-2 text-left transition-colors"
+                    style={{
+                      borderColor: active ? Y.pointDeep : Y.line,
+                      background: active ? "#FFF7D8" : "#FFFFFF",
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>{option.label}</p>
+                      <span
+                        className="h-6 px-2 rounded-lg inline-flex items-center"
+                        style={{
+                          background: active ? Y.pointSoft : "#F3F4F6",
+                          color: active ? Y.pointText : Y.muted,
+                          fontSize: 12,
+                          fontWeight: 800,
+                        }}
+                      >
+                        추천도 {option.score}%
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 13, color: Y.muted }} className="mt-0.5">
+                      {option.hint}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              className="mt-2 h-9 px-3 rounded-xl inline-flex items-center gap-2"
+              style={{ background: Y.pointSoft }}
+            >
+              <MapPin size={13} color={Y.pointText} />
+              <span style={{ fontSize: 14, color: Y.pointText, fontWeight: 800 }}>
+                이동 수단 추천: {selectedTransportOption?.label ?? "-"}
+              </span>
+            </div>
           </div>
         </section>
 
-        <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
+        <section
+          className="rounded-3xl p-4 border order-3"
+          style={{ background: Y.card, borderColor: Y.line, order: 7 }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>오늘의 여정 티켓</p>
+              <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
+                현재까지 완성된 길
+              </h2>
+            </div>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: Y.point }}>
+              <ClipboardList size={16} color={Y.text} />
+            </div>
+          </div>
+
+          <div
+            className="mt-3 rounded-2xl border px-4 pt-4 pb-5 relative overflow-hidden"
+            style={{
+              borderColor: "#EEDAA6",
+              background: "linear-gradient(180deg, #FFF8E8 0%, #FFF3D0 58%, #FFE9B8 100%)",
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.4)",
+            }}
+          >
+            <div
+              className="absolute left-0 right-0 top-0 h-2 opacity-40"
+              style={{
+                background:
+                  "repeating-linear-gradient(90deg, rgba(226,176,75,0.5) 0 10px, rgba(255,250,236,0.35) 10px 20px)",
+              }}
+            />
+            <div
+              className="absolute left-0 right-0 bottom-0 h-3"
+              style={{
+                background:
+                  "conic-gradient(from 135deg at 8px 0, transparent 90deg, rgba(245,208,132,0.95) 0) 0 0/16px 100%",
+              }}
+            />
+
+            <p style={{ fontSize: 17, fontWeight: 900, color: "#7B4D07" }} className="mt-1">
+              기획은 끝, 이제 즐길 시간!
+            </p>
+            <p style={{ fontSize: 13, color: "#8A6B36", fontWeight: 700 }} className="mt-1">
+              단 하나의 티켓으로 오늘 여정을 최종 확인해요.
+            </p>
+
+            <div className="mt-3 rounded-xl border px-3 py-3" style={{ borderColor: "#E8D3A1", background: "#FFFBEF" }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: "#8A5B00" }}>전체 루트 미니맵</p>
+              <div className="mt-2 flex items-start gap-1">
+                {ticketMapStops.map((stop, index) => (
+                  <div key={stop.id} className="flex items-center flex-1 min-w-0">
+                    <div className="flex flex-col items-center min-w-0">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center border"
+                        style={{ borderColor: "#D6A24A", background: "#FFE9B9" }}
+                      >
+                        <span style={{ fontSize: 12, fontWeight: 900, color: "#7B4D07" }}>{index + 1}</span>
+                      </div>
+                      <p
+                        className="mt-1 truncate text-center max-w-[64px]"
+                        style={{ fontSize: 11, color: "#8A6B36", fontWeight: 700 }}
+                        title={stop.name}
+                      >
+                        {stop.name}
+                      </p>
+                    </div>
+                    {index < ticketMapStops.length - 1 && (
+                      <div className="flex-1 h-[3px] rounded-full mx-1 mt-3" style={{ background: "#F0C070" }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl border px-3 py-3" style={{ borderColor: "#E8D3A1", background: "#FFFCF3" }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: "#8A5B00" }}>장소 조각 Final Check-list</p>
+              <div className="mt-2 space-y-2">
+                {ticketTimelineRows.map((row, index) => {
+                  const rewardLabel = index % 2 === 0 ? "SAVE" : "+120P";
+                  const TransportIcon = selectedTransportMeta.Icon;
+                  return (
+                    <div key={row.stop.id}>
+                      <div className="rounded-lg border px-2.5 py-2" style={{ borderColor: "#EFDEBA", background: "#FFFFFF" }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p style={{ fontSize: 13, fontWeight: 800, color: "#433315" }}>{row.stop.name}</p>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: "#8A6B36" }}>
+                            {toClockText(row.arrivalMinute)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <p style={{ fontSize: 12, color: "#8A6B36", fontWeight: 700 }}>
+                            체류 {row.stop.duration}분
+                          </p>
+                          {row.stop.kind === "suggested" && (
+                            <span
+                              className="h-5 px-2 rounded-full inline-flex items-center"
+                              style={{ background: "#FFE8A7", color: "#8A5B00", fontSize: 11, fontWeight: 900 }}
+                            >
+                              {rewardLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {row.hasNext && (
+                        <div className="flex items-center gap-1.5 ml-2 mt-1.5">
+                          <TransportIcon size={12} color="#A06B15" />
+                          <span style={{ fontSize: 11, color: "#8A6B36", fontWeight: 700 }}>
+                            {selectedTransportMeta.label} · 약 {toHourMinute(row.moveMinuteToNext)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl border px-3 py-3" style={{ borderColor: "#E8D3A1", background: "#FFFBEF" }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: "#8A5B00" }}>자산 예측 리포트</p>
+              <p style={{ fontSize: 12, color: "#8A6B36", fontWeight: 700 }} className="mt-1">
+                예상 자산: 총 {expectedPoint.toLocaleString()}P 및 쿠폰 {reservedBenefits.length}종 채굴 예정
+              </p>
+              <p style={{ fontSize: 12, color: "#8A6B36", fontWeight: 700 }} className="mt-1">
+                예상 정복률: {activeRoutine?.region ?? "선택 지역"} 영토 {expectedConquestRate}% 정복 예정
+              </p>
+              <p style={{ fontSize: 12, color: "#8A6B36", fontWeight: 700 }} className="mt-1">
+                세이브 시간: 잇깨비 동선으로 총 {savedMinutes}분 절약!
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
+            <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>여행 날짜 지정</p>
+            <input
+              type="date"
+              value={travelDate}
+              onChange={(event) => setTravelDate(event.target.value)}
+              className="w-full mt-2 h-10 px-3 rounded-xl border outline-none"
+              style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleFinalizePlan}
+            className="w-full mt-3 h-11 rounded-2xl inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            style={{ background: Y.point }}
+          >
+            <Navigation size={15} color={Y.text} />
+            <span style={{ fontSize: 15, fontWeight: 900, color: Y.text }}>지도에 그리기</span>
+          </button>
+        </section>
+
+        <section className="rounded-3xl p-4 border order-5" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
               <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Benefit Booking</p>
@@ -799,45 +1374,46 @@ export function SavedPlaces() {
             </div>
           </div>
         </section>
-
-        <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Finalize</p>
-              <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
-                여정 확정 및 전송
-              </h2>
-            </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: Y.point }}>
-              <WandSparkles size={16} color={Y.text} />
-            </div>
-          </div>
-
-          <p style={{ fontSize: 14, color: Y.muted }} className="mt-2">
-            현재 편집 루틴을 저장하고 담깨비땅 실행 모드로 바로 넘길 수 있어요.
-          </p>
-
-          <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
-            <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>여행 날짜 지정</p>
-            <input
-              type="date"
-              value={travelDate}
-              onChange={(event) => setTravelDate(event.target.value)}
-              className="w-full mt-2 h-10 px-3 rounded-xl border outline-none"
-              style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
-            />
-          </div>
-
-          <button
-            onClick={handleFinalizePlan}
-            className="w-full mt-3 h-12 rounded-2xl inline-flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-            style={{ background: Y.point }}
-          >
-            <Sparkles size={15} color={Y.text} />
-            <span style={{ fontSize: 15, fontWeight: 900, color: Y.text }}>여정 확정하기</span>
-          </button>
-        </section>
       </div>
+
+      {flyingSuggestion && (
+        <div
+          className="pointer-events-none fixed z-[70] rounded-xl border px-3 py-2.5 flex items-center justify-between gap-2"
+          style={{
+            left: flyingSuggestion.fromX,
+            top: flyingSuggestion.fromY,
+            width: flyingSuggestion.width,
+            minHeight: flyingSuggestion.height,
+            borderColor: Y.pointDeep,
+            background: "#FFF7D8",
+            boxShadow: "0 10px 24px rgba(0,0,0,0.16)",
+            transform: flyingSuggestion.flying
+              ? `translate(${flyingSuggestion.toX - flyingSuggestion.fromX}px, ${
+                  flyingSuggestion.toY - flyingSuggestion.fromY
+                }px) scale(0.72)`
+              : "translate(0, 0) scale(1)",
+            opacity: flyingSuggestion.flying ? 0.15 : 1,
+            transition: "transform 540ms cubic-bezier(0.16, 1, 0.3, 1), opacity 540ms ease",
+          }}
+        >
+          <span
+            className="h-5 px-2 rounded-full inline-flex items-center"
+            style={{
+              background: suggestionTone[flyingSuggestion.category].bg,
+              color: suggestionTone[flyingSuggestion.category].text,
+              fontSize: 12,
+              fontWeight: 800,
+            }}
+          >
+            {suggestionCategoryLabel[flyingSuggestion.category]}
+          </span>
+          <span style={{ fontSize: 13, color: Y.text, fontWeight: 800 }} className="truncate">
+            {flyingSuggestion.label}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
+
+

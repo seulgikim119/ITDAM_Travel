@@ -1,6 +1,8 @@
-﻿import { useNavigate } from "react-router";
+﻿import { useLocation, useNavigate } from "react-router";
 import { StatusBar } from "./phone-frame";
 import { ArrowLeft, Share2 } from "lucide-react";
+import { cloneRoutine } from "../clone-store";
+import { routines, type Routine } from "../content-data";
 
 const spots = [
   { name: "정온선원", time: "09:00", move: "이동 0분", tag: "역사", color: "#E8A830" },
@@ -17,6 +19,43 @@ const tagColors: Record<string, string> = {
 
 export function RouteResult() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const routeState =
+    (location.state as { destination?: string; selectedDuration?: string | null; selectedGroup?: string | null } | null) ??
+    null;
+
+  const destination = routeState?.destination?.trim() || "거창";
+  const duration = routeState?.selectedDuration || "당일치기";
+
+  const handleSaveRoute = () => {
+    const fallbackTheme = routines[0]?.theme;
+    const fallbackImage =
+      routines[0]?.image ??
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
+
+    const customRoutine: Routine = {
+      id: `custom-${Date.now()}`,
+      title: `${destination} 맞춤 루트`,
+      subtitle: "루트 만들기에서 생성한 동선",
+      author: "잇깨비",
+      theme: fallbackTheme ?? ("맛집" as Routine["theme"]),
+      duration,
+      budget: "3.5만원",
+      region: destination,
+      likes: 0,
+      clones: 0,
+      image: fallbackImage,
+      routeSummary: spots.map((spot) => spot.name).join(" -> "),
+      stops: spots.map((spot) => ({
+        name: spot.name,
+        note: `${spot.time}, ${spot.move}`,
+      })),
+    };
+
+    cloneRoutine(customRoutine);
+    navigate("/app/saved");
+  };
 
   return (
     <div className="h-full flex flex-col bg-[#FFF8E7]">
@@ -37,7 +76,7 @@ export function RouteResult() {
 
       <div className="flex-1 px-5 pt-5 overflow-y-auto">
         <h1 className="text-[#2C2C2A] mb-6" style={{ fontSize: 20, fontWeight: 700 }}>
-          거창 당일치기 · 4개 장소
+          {destination} {duration} · 4개 장소
         </h1>
 
         <div className="relative">
@@ -76,7 +115,7 @@ export function RouteResult() {
 
       <div className="px-5 pb-[34px] pt-4 space-y-3">
         <button
-          onClick={() => navigate("/app")}
+          onClick={handleSaveRoute}
           className="w-full h-[52px] rounded-2xl text-[#2C2C2A] active:scale-[0.98] transition-transform"
           style={{ fontSize: 16, fontWeight: 600, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
         >

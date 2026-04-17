@@ -34,6 +34,7 @@ const slides: Slide[] = [
 ];
 
 const preferences = tasteOptions;
+const TOTAL_ONBOARDING_STEPS = slides.length + 1;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -263,11 +264,11 @@ const togglePreference = (id: TastePreferenceId) => {
 
         <div className="px-6 pb-[34px] pt-4">
           <div className="flex justify-center gap-2 mb-4">
-            {[0, 1, 2, 3].map((idx) => (
+            {Array.from({ length: TOTAL_ONBOARDING_STEPS }, (_, idx) => (
               <div
                 key={idx}
                 className={`rounded-full transition-all duration-300 ${
-                  idx === 3 ? "w-6 h-2 bg-[#F0C070]" : "w-2 h-2 bg-white/20"
+                  idx === slides.length ? "w-6 h-2 bg-[#F0C070]" : "w-2 h-2 bg-white/20"
                 }`}
               />
             ))}
@@ -339,7 +340,7 @@ const togglePreference = (id: TastePreferenceId) => {
               </p>
 
               <div className="flex justify-center gap-2 mt-8">
-                {slides.map((_, idx) => (
+                {Array.from({ length: TOTAL_ONBOARDING_STEPS }, (_, idx) => (
                   <div
                     key={idx}
                     className={`rounded-full transition-all duration-300 ${

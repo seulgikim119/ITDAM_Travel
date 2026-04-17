@@ -1,16 +1,22 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { StatusBar } from "./phone-frame";
 import {
   BadgeCheck,
-  CalendarClock,
+  BatteryLow,
   ChevronLeft,
+  MapPinned,
+  Navigation,
+  PackageCheck,
   Radar,
+  Route,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import damggaebiImg from "../../assets/damggaebiImg.png";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { getClonedRoutines } from "../clone-store";
+import type { Routine } from "../content-data";
 import { getCompletedPlans, removeCompletedPlan, type CompletedPlan } from "../completed-plan-store";
 import {
   journeyMineSpots,
@@ -19,11 +25,210 @@ import {
   type MineSpot,
   type ProvinceVisitSeed,
 } from "../journey-data";
-
 type ProvinceVisit = ProvinceVisitSeed;
+type MapBridgeService = "kakao" | "naver" | "google";
+
+type PocketSyncPlace = {
+  id: string;
+  order: number;
+  name: string;
+  lat: number;
+  lng: number;
+  moveTip: string;
+  expectedMoveMinutes: number;
+  benefit: boolean;
+};
+
+type PocketSyncCoupon = {
+  id: string;
+  title: string;
+  code: string;
+  barcodeBase64: string;
+};
+
+type PocketSyncPackage = {
+  planId: string;
+  title: string;
+  region: string;
+  travelDate: string;
+  savedAt: string;
+  places: PocketSyncPlace[];
+  coupons: PocketSyncCoupon[];
+};
+
+type PocketSyncPackageMap = Record<string, PocketSyncPackage>;
 
 const initialProvinceVisits: ProvinceVisit[] = provinceVisitSeed;
 const mineSpots: MineSpot[] = journeyMineSpots;
+const POCKET_SYNC_STORAGE_KEY = "itdam_pocket_sync_pack_v1";
+const POWER_SAVER_STORAGE_KEY = "itdam_power_saver_mode_v1";
+const DEFAULT_REGION_ANCHOR = { lat: 37.5665, lng: 126.978 };
+
+const REGION_ANCHORS: Array<{ keyword: string; lat: number; lng: number }> = [
+  { keyword: "전주", lat: 35.8242, lng: 127.148 },
+  { keyword: "강릉", lat: 37.7519, lng: 128.8761 },
+  { keyword: "제주", lat: 33.4996, lng: 126.5312 },
+  { keyword: "부산", lat: 35.1796, lng: 129.0756 },
+  { keyword: "여수", lat: 34.7604, lng: 127.6622 },
+  { keyword: "경주", lat: 35.8562, lng: 129.2247 },
+  { keyword: "거창", lat: 35.6866, lng: 127.9095 },
+  { keyword: "서울", lat: 37.5665, lng: 126.978 },
+];
+
+const OFFLINE_MOVE_TIPS = [
+  "신호 많은 구간은 한 블록 우회하면 이동이 빨라요.",
+  "점심 피크 시간 전 이동하면 대기 시간을 줄일 수 있어요.",
+  "주차장은 목적지 150m 전부터 미리 확인하면 좋아요.",
+  "도보 구간은 횡단보도 밀집 코스를 우선으로 잡아주세요.",
+];
+
+function readPocketSyncPackages(): PocketSyncPackageMap {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem(POCKET_SYNC_STORAGE_KEY);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw) as PocketSyncPackageMap;
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function writePocketSyncPackages(next: PocketSyncPackageMap) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(POCKET_SYNC_STORAGE_KEY, JSON.stringify(next));
+}
+
+function readPowerSaverMode() {
+  if (typeof window === "undefined") return true;
+  const raw = window.localStorage.getItem(POWER_SAVER_STORAGE_KEY);
+  if (raw === null) return true;
+  return raw === "1";
+}
+
+function writePowerSaverMode(enabled: boolean) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(POWER_SAVER_STORAGE_KEY, enabled ? "1" : "0");
+}
+
+function safeBase64(value: string) {
+  if (typeof window === "undefined") return "";
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary);
+}
+
+function toBarcodeBase64(code: string) {
+  let x = 10;
+  const bars: string[] = [];
+  code.split("").forEach((char) => {
+    const barCount = (char.charCodeAt(0) % 4) + 2;
+    for (let i = 0; i < barCount; i += 1) {
+      bars.push(`<rect x="${x}" y="8" width="2" height="26" rx="1" fill="#1F2A20" />`);
+      x += 3;
+    }
+    x += 2;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="56" viewBox="0 0 200 56"><rect width="200" height="56" fill="#FFFFFF"/><rect x="6" y="6" width="188" height="34" rx="4" fill="#F4F8F4" stroke="#D5E2D7"/>${bars.join("")}<text x="100" y="50" text-anchor="middle" font-size="10" font-family="Arial" fill="#334336">${code}</text></svg>`;
+  return `data:image/svg+xml;base64,${safeBase64(svg)}`;
+}
+
+function resolveRegionAnchor(region: string) {
+  return REGION_ANCHORS.find((item) => region.includes(item.keyword)) ?? DEFAULT_REGION_ANCHOR;
+}
+
+function stableSeed(value: string) {
+  return value.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function resolvePlanStopNames(plan: CompletedPlan, clonedRoutines: Routine[]) {
+  const fromCloned = clonedRoutines.find((routine) => routine.id === plan.sourceRoutineId);
+  const baseNames = fromCloned?.stops.map((stop) => stop.name) ?? [];
+  const requiredCount = Math.max(plan.totalStops, 2);
+
+  if (baseNames.length >= requiredCount) {
+    return baseNames.slice(0, requiredCount);
+  }
+
+  const next = [...baseNames];
+  while (next.length < requiredCount) {
+    next.push(`${plan.region} 여정 조각 ${next.length + 1}`);
+  }
+  return next;
+}
+
+function buildPocketSyncPackage(plan: CompletedPlan, clonedRoutines: Routine[]): PocketSyncPackage {
+  const stopNames = resolvePlanStopNames(plan, clonedRoutines);
+  const anchor = resolveRegionAnchor(plan.region);
+  const seed = stableSeed(plan.id);
+  const edgeCount = Math.max(stopNames.length - 1, 1);
+  const movePerEdge = Math.max(8, Math.round((plan.totalMinutes * 0.35) / edgeCount));
+
+  const places: PocketSyncPlace[] = stopNames.map((name, index) => {
+    const angle = (Math.PI * 2 * (index + 1)) / (stopNames.length + 1);
+    const jitter = ((seed + index * 17) % 7) * 0.0012;
+    const lat = Number((anchor.lat + Math.cos(angle) * 0.018 + jitter).toFixed(6));
+    const lng = Number((anchor.lng + Math.sin(angle) * 0.018 - jitter).toFixed(6));
+    return {
+      id: `${plan.id}-place-${index + 1}`,
+      order: index + 1,
+      name,
+      lat,
+      lng,
+      moveTip: OFFLINE_MOVE_TIPS[index % OFFLINE_MOVE_TIPS.length],
+      expectedMoveMinutes: index < stopNames.length - 1 ? movePerEdge : 0,
+      benefit: index % 2 === 1,
+    };
+  });
+
+  const coupons = places
+    .filter((place) => place.benefit)
+    .slice(0, 2)
+    .map((place, index) => {
+      const code = `ITDAM-${plan.id.slice(-4).toUpperCase()}-${index + 1}`;
+      return {
+        id: `${plan.id}-coupon-${index + 1}`,
+        title: `${place.name} 제휴 쿠폰`,
+        code,
+        barcodeBase64: toBarcodeBase64(code),
+      };
+    });
+
+  return {
+    planId: plan.id,
+    title: plan.title,
+    region: plan.region,
+    travelDate: plan.travelDate ?? plan.finalizedAt.slice(0, 10),
+    savedAt: new Date().toISOString(),
+    places,
+    coupons,
+  };
+}
+
+function buildMapBridgeUrl(service: MapBridgeService, pack: PocketSyncPackage, powerSaverMode: boolean) {
+  const routeLabel = pack.places.map((place) => place.name).join(" > ");
+  const start = pack.places[0];
+  const end = pack.places[pack.places.length - 1];
+  const waypoints = pack.places.slice(1, -1);
+  const travelMode = powerSaverMode ? "walking" : "driving";
+
+  if (service === "google") {
+    const waypointQuery = waypoints.map((place) => `${place.lat},${place.lng}`).join("|");
+    const base = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(`${start.lat},${start.lng}`)}&destination=${encodeURIComponent(`${end.lat},${end.lng}`)}&travelmode=${travelMode}`;
+    return waypointQuery ? `${base}&waypoints=${encodeURIComponent(waypointQuery)}` : base;
+  }
+
+  if (service === "kakao") {
+    return `https://map.kakao.com/?q=${encodeURIComponent(routeLabel)}`;
+  }
+
+  return `https://map.naver.com/v5/search/${encodeURIComponent(routeLabel)}`;
+}
 
 function bubbleRadius(count: number, maxCount: number) {
   if (maxCount <= 0) return 7;
@@ -63,6 +268,14 @@ export function TravelSketchbook() {
   const [minedIds, setMinedIds] = useState<string[]>([]);
   const [popupText, setPopupText] = useState<string | null>(null);
   const [completedPlans, setCompletedPlans] = useState<CompletedPlan[]>([]);
+  const [pocketSyncPackages, setPocketSyncPackages] = useState<PocketSyncPackageMap>({});
+  const [syncingPlanId, setSyncingPlanId] = useState<string | null>(null);
+  const [successFlowPlanId, setSuccessFlowPlanId] = useState<string | null>(null);
+  const [mapBridgePlanId, setMapBridgePlanId] = useState<string | null>(null);
+  const [ticketPlanId, setTicketPlanId] = useState<string | null>(null);
+  const [powerSaverMode, setPowerSaverMode] = useState<boolean>(() => readPowerSaverMode());
+  const [autoSyncedPlanIds, setAutoSyncedPlanIds] = useState<string[]>([]);
+  const clonedRoutines = useMemo(() => getClonedRoutines(), [completedPlans.length]);
 
   useEffect(() => {
     if (!popupText) return;
@@ -72,7 +285,88 @@ export function TravelSketchbook() {
 
   useEffect(() => {
     setCompletedPlans(getCompletedPlans());
+    setPocketSyncPackages(readPocketSyncPackages());
   }, []);
+
+  useEffect(() => {
+    writePowerSaverMode(powerSaverMode);
+  }, [powerSaverMode]);
+
+  const createPocketSyncPack = useCallback(
+    (
+      plan: CompletedPlan,
+      options?: {
+        showFlow?: boolean;
+        onDone?: () => void;
+      }
+    ) => {
+      if (syncingPlanId) return;
+      setSyncingPlanId(plan.id);
+      window.setTimeout(() => {
+        const pack = buildPocketSyncPackage(plan, clonedRoutines);
+        setPocketSyncPackages((prev) => {
+          const next = { ...prev, [plan.id]: pack };
+          writePocketSyncPackages(next);
+          return next;
+        });
+        setSyncingPlanId(null);
+        setPopupText("잇깨비가 여정 정보를 보따리에 꾹꾹 눌러 담았깨비! 인터넷이 없어도 꺼내 볼 수 있깨비!");
+        if (options?.showFlow) {
+          setSuccessFlowPlanId(plan.id);
+        }
+        options?.onDone?.();
+      }, 360);
+    },
+    [clonedRoutines, syncingPlanId]
+  );
+
+  useEffect(() => {
+    const newestPlan = completedPlans[0];
+    if (!newestPlan) return;
+    if (pocketSyncPackages[newestPlan.id]) return;
+    if (autoSyncedPlanIds.includes(newestPlan.id)) return;
+    const isRecent = Date.now() - new Date(newestPlan.finalizedAt).getTime() < 1000 * 60 * 8;
+    if (!isRecent) return;
+    setAutoSyncedPlanIds((prev) => [...prev, newestPlan.id]);
+    createPocketSyncPack(newestPlan, { showFlow: true });
+  }, [completedPlans, pocketSyncPackages, autoSyncedPlanIds, createPocketSyncPack]);
+
+  const handleOpenMapBridge = (plan: CompletedPlan) => {
+    if (pocketSyncPackages[plan.id]) {
+      setMapBridgePlanId(plan.id);
+      return;
+    }
+    createPocketSyncPack(plan, {
+      showFlow: false,
+      onDone: () => setMapBridgePlanId(plan.id),
+    });
+  };
+
+  const activeMapBridgePack = mapBridgePlanId ? pocketSyncPackages[mapBridgePlanId] ?? null : null;
+  const activeTicketPlan = ticketPlanId ? completedPlans.find((plan) => plan.id === ticketPlanId) ?? null : null;
+  const activeTicketPack = ticketPlanId ? pocketSyncPackages[ticketPlanId] ?? null : null;
+  const successFlowPlan = successFlowPlanId
+    ? completedPlans.find((plan) => plan.id === successFlowPlanId) ?? null
+    : null;
+
+  const launchMapBridge = (service: MapBridgeService) => {
+    if (!activeMapBridgePack) return;
+    const targetUrl = buildMapBridgeUrl(service, activeMapBridgePack, powerSaverMode);
+    window.open(targetUrl, "_blank", "noopener,noreferrer");
+    setPopupText("길찾기가 막막할 땐 내가 길을 터주겠깨비!");
+    setMapBridgePlanId(null);
+  };
+
+  const handleOpenFinalTicket = (plan: CompletedPlan) => {
+    if (pocketSyncPackages[plan.id]) {
+      setTicketPlanId(plan.id);
+      return;
+    }
+    createPocketSyncPack(plan, {
+      showFlow: false,
+      onDone: () => setTicketPlanId(plan.id),
+    });
+  };
 
   const visitedProvinceCount = useMemo(
     () => provinceVisits.filter((province) => province.visitCount > 0).length,
@@ -125,6 +419,12 @@ export function TravelSketchbook() {
   const handleRemoveCompletedPlan = (planId: string) => {
     const next = removeCompletedPlan(planId);
     setCompletedPlans(next);
+    setPocketSyncPackages((prev) => {
+      const nextPack = { ...prev };
+      delete nextPack[planId];
+      writePocketSyncPackages(nextPack);
+      return nextPack;
+    });
   };
 
   return (
@@ -337,35 +637,111 @@ export function TravelSketchbook() {
             </div>
           ) : (
             <div className="space-y-2 mt-3">
-              {completedPlans.map((plan) => (
-                <article
-                  key={plan.id}
-                  className="rounded-2xl p-3 border flex items-center justify-between gap-2"
-                  style={{ borderColor: G.line, background: "#FBFDFC" }}
-                >
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{plan.title}</p>
-                    <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
-                      {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 14, fontWeight: 700, color: G.pointDeep }}>
-                      {formatDateLabel(plan.finalizedAt)}
-                    </span>
+              {completedPlans.map((plan) => {
+                const pack = pocketSyncPackages[plan.id];
+                const syncing = syncingPlanId === plan.id;
+                return (
+                  <article
+                    key={plan.id}
+                    className="rounded-2xl p-3 border"
+                    style={{ borderColor: G.line, background: "#FBFDFC" }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{plan.title}</p>
+                        <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
+                          {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
+                        </p>
+                        <p style={{ fontSize: 13, color: G.pointDeep, fontWeight: 700 }} className="mt-1">
+                          {formatDateLabel(plan.finalizedAt)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCompletedPlan(plan.id)}
+                        className="h-7 w-7 rounded-lg inline-flex items-center justify-center"
+                        style={{ background: "#F1F3F2", color: "#738078" }}
+                        aria-label="확정 플랜 삭제"
+                        title="삭제"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => handleRemoveCompletedPlan(plan.id)}
-                      className="h-7 w-7 rounded-lg inline-flex items-center justify-center"
-                      style={{ background: "#F1F3F2", color: "#738078" }}
-                      aria-label="확정 플랜 삭제"
-                      title="삭제"
+                      onClick={() => handleOpenFinalTicket(plan)}
+                      className="w-full mt-2 rounded-xl border px-3 py-2 text-left"
+                      style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}
                     >
-                      <Trash2 size={13} />
+                      <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
+                        {plan.region} 1일차 여정 완성!
+                      </p>
+                      <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
+                        장소 순서 · 이동 수단 · 예상 혜택을 티켓으로 확인해보세요.
+                      </p>
+                      <p style={{ fontSize: 12, color: "#2D5FAF", fontWeight: 800 }} className="mt-1">
+                        티켓 열어보기
+                      </p>
                     </button>
-                  </div>
-                </article>
-              ))}
+
+                    {pack && (
+                      <div className="mt-2 rounded-xl border p-2.5" style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}>
+                        <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
+                          내 주머니 속 여정(Pocket Sync) 저장 완료
+                        </p>
+                        <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
+                          장소 {pack.places.length}곳 · 쿠폰 바코드 {pack.coupons.length}종 오프라인 보관
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-1">
+                          {pack.places.slice(0, 4).map((place, index) => (
+                            <div key={place.id} className="flex items-center">
+                              <span
+                                className="w-5 h-5 rounded-full inline-flex items-center justify-center"
+                                style={{ background: "#DFF5E5", color: G.pointDeep, fontSize: 11, fontWeight: 900 }}
+                              >
+                                {index + 1}
+                              </span>
+                              {index < Math.min(pack.places.length, 4) - 1 && (
+                                <span className="w-3 h-[2px] mx-1 rounded-full" style={{ background: "#8ED7A0" }} />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-1.5 space-y-1">
+                          {pack.places.slice(0, 2).map((place) => (
+                            <p key={place.id} style={{ fontSize: 12, color: "#4E5F51", fontWeight: 700 }}>
+                              {place.order}. {place.name} · {place.moveTip}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <button
+                        type="button"
+                        disabled={syncing}
+                        onClick={() => createPocketSyncPack(plan, { showFlow: true })}
+                        className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                        style={{ background: "#E7F9EC", color: G.pointDeep, fontSize: 13, fontWeight: 800 }}
+                      >
+                        <PackageCheck size={14} />
+                        {syncing ? "보따리 저장 중..." : "오프라인 저장"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMapBridge(plan)}
+                        className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5"
+                        style={{ background: "#EAF1FF", color: "#2D5FAF", fontSize: 13, fontWeight: 800 }}
+                      >
+                        <MapPinned size={14} />
+                        길안내 연동
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>
@@ -472,13 +848,221 @@ export function TravelSketchbook() {
         
       </div>
 
+      {successFlowPlan && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
+          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+            <div className="absolute inset-0 bg-black/35" />
+            <div className="absolute inset-0 px-6 flex items-center justify-center">
+              <div className="w-full max-w-[340px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
+                <p style={{ fontSize: 14, fontWeight: 900, color: G.text }}>
+                  여정이 안전하게 저장됐깨비! 이제 밖으로 나가볼까요?
+                </p>
+                <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
+                  {successFlowPlan.title} 정보를 현장용 데이터 팩으로 저장했습니다.
+                </p>
+                <p style={{ fontSize: 13, color: G.pointDeep, fontWeight: 700 }} className="mt-2">
+                  잇깨비가 여정 정보를 보따리에 꾹꾹 눌러 담았깨비! 인터넷이 없어도 꺼내 볼 수 있깨비!
+                </p>
+
+                <div className="grid gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMapBridgePlanId(successFlowPlan.id);
+                      setSuccessFlowPlanId(null);
+                    }}
+                    className="h-10 rounded-xl inline-flex items-center justify-center gap-1.5"
+                    style={{ background: "#EAF1FF", color: "#2D5FAF", fontSize: 13, fontWeight: 800 }}
+                  >
+                    <Navigation size={14} />
+                    내비게이션 실행하기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSuccessFlowPlanId(null)}
+                    className="h-10 rounded-xl inline-flex items-center justify-center gap-1.5"
+                    style={{ background: "#EEF3EF", color: "#4B5A4D", fontSize: 13, fontWeight: 800 }}
+                  >
+                    <Route size={14} />
+                    바로 담깨비땅으로 가기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeMapBridgePack && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
+          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+            <div className="absolute inset-0 bg-black/35" />
+            <div className="absolute inset-0 px-6 flex items-center justify-center">
+              <div className="w-full max-w-[348px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
+                <p style={{ fontSize: 14, fontWeight: 900, color: G.text }}>
+                  길찾기가 막막할 땐 내가 길을 터주겠깨비!
+                </p>
+                <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
+                  출발지부터 경유지, 도착지까지 포함한 경로를 원하는 맵으로 보낼 수 있어요.
+                </p>
+                <p style={{ fontSize: 13, color: G.pointDeep, fontWeight: 700 }} className="mt-2">
+                  {activeMapBridgePack.places.map((place) => place.name).join(" → ")}
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => launchMapBridge("kakao")}
+                    className="h-9 rounded-xl border"
+                    style={{ borderColor: "#F4D48A", background: "#FFF4C9", color: "#704A00", fontSize: 12, fontWeight: 900 }}
+                  >
+                    카카오맵
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => launchMapBridge("naver")}
+                    className="h-9 rounded-xl border"
+                    style={{ borderColor: "#BEEBC9", background: "#E7F9EC", color: "#1A7C38", fontSize: 12, fontWeight: 900 }}
+                  >
+                    네이버맵
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => launchMapBridge("google")}
+                    className="h-9 rounded-xl border"
+                    style={{ borderColor: "#CFE1FF", background: "#EAF1FF", color: "#2D5FAF", fontSize: 12, fontWeight: 900 }}
+                  >
+                    구글 지도
+                  </button>
+                </div>
+
+                <div className="mt-3 rounded-xl border p-2.5" style={{ borderColor: "#E3ECE5", background: "#F8FBF9" }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <BatteryLow size={13} color="#5D6E60" />
+                      <p style={{ fontSize: 12, color: "#5D6E60", fontWeight: 700 }}>
+                        외부 맵 사용 시 배터리 절약 모드
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPowerSaverMode((prev) => !prev)}
+                      className="h-7 px-2 rounded-lg"
+                      style={{
+                        background: powerSaverMode ? "#DFF5E5" : "#E9EEF0",
+                        color: powerSaverMode ? "#1A7C38" : "#607076",
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {powerSaverMode ? "절전 ON" : "절전 OFF"}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 12, color: G.muted }} className="mt-1">
+                    트래킹 모드를 절전 중심으로 유지해 배터리 소모를 줄입니다.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMapBridgePlanId(null)}
+                  className="w-full mt-3 h-9 rounded-xl"
+                  style={{ background: "#EEF3EF", color: "#4B5A4D", fontSize: 13, fontWeight: 800 }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTicketPlan && activeTicketPack && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
+          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+            <div className="absolute inset-0 bg-black/35" onClick={() => setTicketPlanId(null)} />
+            <div
+              className="absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-6"
+              style={{ background: "#FFFFFF", borderColor: G.line }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 rounded-full mx-auto" style={{ background: "#DDE6DF" }} />
+              <div className="mt-3 rounded-2xl border px-3 py-3 relative overflow-hidden" style={{ borderColor: "#D8EBDD", background: "#F7FCF8" }}>
+                <div
+                  className="absolute left-0 right-0 bottom-0 h-2"
+                  style={{
+                    background:
+                      "conic-gradient(from 135deg at 8px 0, transparent 90deg, rgba(205,233,214,0.95) 0) 0 0/16px 100%",
+                  }}
+                />
+
+                <p style={{ fontSize: 14, fontWeight: 900, color: G.text }}>오늘의 여정 확인 티켓</p>
+                <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
+                  {activeTicketPlan.title} · {formatDateLabel(activeTicketPlan.travelDate ?? activeTicketPlan.finalizedAt)}
+                </p>
+
+                <div className="mt-3 space-y-2">
+                  {activeTicketPack.places.map((place, index) => (
+                    <div key={place.id}>
+                      <div className="rounded-xl border px-2.5 py-2" style={{ borderColor: "#E2ECE3", background: "#FFFFFF" }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p style={{ fontSize: 13, fontWeight: 800, color: G.text }}>
+                            {place.order}. {place.name}
+                          </p>
+                          {place.benefit && (
+                            <span
+                              className="h-5 px-2 rounded-full inline-flex items-center"
+                              style={{ background: "#E7F9EC", color: G.pointDeep, fontSize: 11, fontWeight: 900 }}
+                            >
+                              +120P
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {index < activeTicketPack.places.length - 1 && (
+                        <div className="flex items-center gap-1.5 ml-2 mt-1.5">
+                          <Navigation size={12} color="#1FA84A" />
+                          <span style={{ fontSize: 12, color: G.muted, fontWeight: 700 }}>
+                            이동 {place.expectedMoveMinutes}분
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-3 rounded-xl border px-2.5 py-2" style={{ borderColor: "#E2ECE3", background: "#FFFFFF" }}>
+                  <p style={{ fontSize: 12, color: G.muted, fontWeight: 700 }}>
+                    예상 혜택: 쿠폰 {activeTicketPack.coupons.length}종 · 포인트 +
+                    {(activeTicketPack.places.filter((place) => place.benefit).length * 120).toLocaleString()}P
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTicketPlanId(null)}
+                className="w-full mt-3 h-10 rounded-xl"
+                style={{ background: "#EEF3EF", color: "#4B5A4D", fontSize: 13, fontWeight: 800 }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {popupText && (
-        <div className="fixed left-1/2 -translate-x-1/2 bottom-[96px] z-40">
-          <div
-            className="px-4 py-2 rounded-xl shadow-lg"
-            style={{ background: "rgba(18, 28, 19, 0.92)", color: "#E7F9EC", fontSize: 14, fontWeight: 700 }}
-          >
-            {popupText}
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3 pointer-events-none">
+          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-[96px]">
+              <div
+                className="px-4 py-2 rounded-xl shadow-lg"
+                style={{ background: "rgba(18, 28, 19, 0.92)", color: "#E7F9EC", fontSize: 14, fontWeight: 700 }}
+              >
+                {popupText}
+              </div>
+            </div>
           </div>
         </div>
       )}

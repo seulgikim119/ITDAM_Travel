@@ -196,7 +196,15 @@ export function CreateRoute() {
 
       <div className="px-5 pb-[34px] pt-4">
         <button
-          onClick={() => navigate("/route-generating", { state: { destination } })}
+          onClick={() =>
+            navigate("/route-generating", {
+              state: {
+                destination,
+                selectedDuration,
+                selectedGroup,
+              },
+            })
+          }
           className={`w-full h-[52px] rounded-2xl transition-all active:scale-[0.98] ${
             destination ? "text-[#2C2C2A] shadow-sm" : "bg-[#F0E6D0] text-[#C7C7CC]"
           }`}
