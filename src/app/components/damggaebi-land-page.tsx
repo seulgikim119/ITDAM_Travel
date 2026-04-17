@@ -1,10 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
 import { StatusBar } from "./phone-frame";
 import {
   BadgeCheck,
   BatteryLow,
-  ChevronLeft,
   MapPinned,
   Navigation,
   PackageCheck,
@@ -257,8 +255,6 @@ function formatDateLabel(isoDate: string) {
 }
 
 export function TravelSketchbook() {
-  const navigate = useNavigate();
-
   const G = {
     bg: "#F4F8F4",
     card: "#FFFFFF",
@@ -439,12 +435,6 @@ export function TravelSketchbook() {
       <div className="bg-[#2C2C2A] rounded-b-[30px] pb-5 shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
         <StatusBar light />
         <div className="px-5 pt-1 flex items-start gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-8 h-8 mt-1 -ml-1 rounded-xl inline-flex items-center justify-center bg-white/10"
-          >
-            <ChevronLeft size={18} className="text-white" />
-          </button>
           <div className="flex-1">
             <h1 className="text-white" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.2 }}>
               담깨비 <span style={{ color: "#34C759" }}>LAND</span>
