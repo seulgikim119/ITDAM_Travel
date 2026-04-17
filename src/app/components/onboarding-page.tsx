@@ -124,7 +124,7 @@ const togglePreference = (id: TastePreferenceId) => {
         <div className="w-full max-w-[310px] mb-8">
           <div className="h-[42px] rounded-xl bg-white/90 px-4 flex items-center gap-2 text-[#B5B5B5]">
             <Search size={10} />
-            <span style={{ fontSize: 12, fontWeight: 500 }}>도시, 지역 검색</span>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>도시, 지역 검색</span>
           </div>
 
           <div className="flex justify-center mt-3">
@@ -133,7 +133,7 @@ const togglePreference = (id: TastePreferenceId) => {
 
           <div className="h-[38px] rounded-lg bg-[#F7F2E6] px-3 flex items-center gap-2 text-[#C1B6A1] mt-3">
             <Link2 size={10} />
-            <span style={{ fontSize: 11, fontWeight: 500 }}>인스타/네이버 지도 URL 붙여넣기</span>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>인스타/네이버 지도 URL 붙여넣기</span>
           </div>
         </div>
       );
@@ -159,7 +159,7 @@ const togglePreference = (id: TastePreferenceId) => {
             <img src={itggaebiImg} alt="잇깨비" className="w-[100px] h-[100px] object-contain" />
 
             <div className="mt-4 px-4 h-8 rounded-full bg-[#F0C070]/16 border border-[#F0C070]/25 text-[#F0C070] flex items-center">
-              <span style={{ fontSize: 12, fontWeight: 700 }}>맞춤 루트를 이어붙이는 중</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>맞춤 루트를 이어붙이는 중</span>
             </div>
 
             <div className="mt-5 flex flex-wrap justify-center gap-2">
@@ -168,8 +168,8 @@ const togglePreference = (id: TastePreferenceId) => {
                   key={pref.id}
                   className="h-9 px-3 rounded-full bg-[#F4E4C2]/14 border border-[#F0C070]/20 text-[#EAC582] flex items-center gap-1.5"
                 >
-                  <span style={{ fontSize: 13 }}>{pref.emoji}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700 }}>{pref.label}</span>
+                  <span style={{ fontSize: 14 }}>{pref.emoji}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{pref.label}</span>
                 </div>
               ))}
             </div>
@@ -185,7 +185,7 @@ const togglePreference = (id: TastePreferenceId) => {
                   }}
                 />
               </div>
-              <p className="text-white/35 text-center mt-3" style={{ fontSize: 13, fontWeight: 600 }}>
+              <p className="text-white/35 text-center mt-3" style={{ fontSize: 14, fontWeight: 600 }}>
                 취향을 분석하고 있어요
               </p>
               <div className="flex justify-center gap-2 mt-4">
@@ -213,7 +213,7 @@ const togglePreference = (id: TastePreferenceId) => {
         <div className="flex-1 px-6 pt-4 overflow-y-auto">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={16} className="text-[#F0C070]" />
-            <span className="text-[#F0C070]" style={{ fontSize: 12, fontWeight: 700 }}>
+            <span className="text-[#F0C070]" style={{ fontSize: 14, fontWeight: 700 }}>
               취향 선택
             </span>
           </div>
@@ -246,7 +246,7 @@ const togglePreference = (id: TastePreferenceId) => {
                   <span style={{ fontSize: 18 }}>{pref.emoji}</span>
                   <span
                     className={`flex-1 text-left ${selected ? "text-[#F0C070]" : "text-white/75"}`}
-                    style={{ fontSize: 13, fontWeight: 600 }}
+                    style={{ fontSize: 14, fontWeight: 600 }}
                   >
                     {pref.label}
                   </span>
@@ -364,21 +364,12 @@ const togglePreference = (id: TastePreferenceId) => {
           >
             {step === 0 ? "시작하기" : "다음"}
           </button>
-          {step > 0 && (
-            <button
-              onClick={() => navigate("/login", { state: { from: "/app/my" } })}
-              className="w-full mt-3 h-[48px] rounded-2xl border border-[#F0C070]/45 text-[#F0C070]"
-              style={{ fontSize: 14, fontWeight: 700 }}
-            >
-              로그인하고 시작하기
-            </button>
-          )}
           <button
             onClick={() => navigate("/app")}
             className="w-full mt-3 text-white/20 text-center"
             style={{ fontSize: 14, fontWeight: 600 }}
           >
-            비로그인으로 시작하기
+            SKIP
           </button>
         </div>
       </div>

@@ -18,6 +18,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { getClonedRoutines, removeClonedRoutine } from "../clone-store";
 import { saveCompletedPlan } from "../completed-plan-store";
 import type { Routine } from "../content-data";
+import { useMouseDragScroll } from "../hooks/use-mouse-drag-scroll";
 
 type DraftStop = {
   id: string;
@@ -217,6 +218,7 @@ function getTodayISODate() {
 
 export function SavedPlaces() {
   const navigate = useNavigate();
+  const savedRoutinesDrag = useMouseDragScroll<HTMLDivElement>();
   const [savedRoutines, setSavedRoutines] = useState<Routine[]>([]);
   const [activeRoutineId, setActiveRoutineId] = useState<string | null>(null);
   const [draftStops, setDraftStops] = useState<DraftStop[]>(fallbackStops);
@@ -383,7 +385,7 @@ export function SavedPlaces() {
           <h1 className="text-white" style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.2 }}>
             잇깨비 <span className="text-[#F0C070]">PICK</span>
           </h1>
-          <p className="text-[#E8A830] mt-1" style={{ fontSize: 12, fontWeight: 600 }}>
+          <p className="text-[#E8A830] mt-1" style={{ fontSize: 14, fontWeight: 600 }}>
             클로닝, 스냅, 편집까지 한 번에 연결되는 여행 편집함
           </p>
         </div>
@@ -391,7 +393,7 @@ export function SavedPlaces() {
         <div className="px-4 mt-3">
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 저장 루틴
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -399,7 +401,7 @@ export function SavedPlaces() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 편집 스톱
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -407,7 +409,7 @@ export function SavedPlaces() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 예약 혜택
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -422,7 +424,7 @@ export function SavedPlaces() {
         <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: Y.pointText }}>Input & Clone</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Input & Clone</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 여정 가져오기
               </h2>
@@ -438,26 +440,30 @@ export function SavedPlaces() {
               className="h-12 rounded-2xl px-3 text-left transition-transform border"
               style={{ background: "#FFFDF2", borderColor: Y.pointDeep }}
             >
-              <p style={{ fontSize: 13, fontWeight: 900, color: Y.text }}>원클릭 클로닝</p>
+              <p style={{ fontSize: 14, fontWeight: 900, color: Y.text }}>원클릭 클로닝</p>
             </button>
             <button
               onClick={() => navigate("/snap-route")}
               className="h-12 rounded-2xl px-3 text-left active:scale-[0.98] transition-transform border"
               style={{ background: "#FFFDF2", borderColor: Y.pointDeep }}
             >
-              <p style={{ fontSize: 13, fontWeight: 900, color: Y.text }}>AI 스냅 루트</p>
+              <p style={{ fontSize: 14, fontWeight: 900, color: Y.text }}>AI 스냅 루트</p>
             </button>
           </div>
 
           {savedRoutines.length === 0 ? (
             <div className="mt-3 rounded-2xl p-4 border border-dashed" style={{ borderColor: Y.pointDeep }}>
-              <p style={{ fontSize: 13, fontWeight: 800, color: Y.text }}>클로닝된 루틴이 아직 없어요.</p>
-              <p style={{ fontSize: 12, color: Y.muted }} className="mt-1">
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>클로닝된 루틴이 아직 없어요.</p>
+              <p style={{ fontSize: 14, color: Y.muted }} className="mt-1">
                 잇깨비길에서 루틴을 클론하면 바로 여기 편집창으로 가져올 수 있어요.
               </p>
             </div>
           ) : (
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div
+              ref={savedRoutinesDrag.ref}
+              {...savedRoutinesDrag.handlers}
+              className="mt-3 flex gap-2 overflow-x-auto pb-1 cursor-grab select-none"
+            >
               {savedRoutines.map((routine) => {
                 const active = routine.id === activeRoutineId;
                 return (
@@ -483,15 +489,15 @@ export function SavedPlaces() {
                             className="absolute left-2 top-2 h-6 px-2 rounded-full inline-flex items-center"
                             style={{ background: Y.point }}
                           >
-                            <span style={{ fontSize: 10, fontWeight: 900, color: Y.text }}>편집 중</span>
+                            <span style={{ fontSize: 14, fontWeight: 900, color: Y.text }}>편집 중</span>
                           </span>
                         )}
                       </div>
                       <div className="px-3 py-2">
-                        <p style={{ fontSize: 13, fontWeight: 800, color: Y.text }} className="truncate">
+                        <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="truncate">
                           {routine.title}
                         </p>
-                        <p style={{ fontSize: 11, color: Y.muted }} className="truncate">
+                        <p style={{ fontSize: 14, color: Y.muted }} className="truncate">
                           {routine.region} · {routine.duration}
                         </p>
                       </div>
@@ -503,7 +509,7 @@ export function SavedPlaces() {
                         style={{ borderColor: "#FFD2D4", color: Y.danger, background: "#FFF5F5" }}
                       >
                         <Trash2 size={12} />
-                        <span style={{ fontSize: 11, fontWeight: 700 }}>정리</span>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>정리</span>
                       </button>
                     </div>
                   </article>
@@ -516,7 +522,7 @@ export function SavedPlaces() {
         <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: Y.pointText }}>Smart Editing</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Smart Editing</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 지능형 타임라인 편집
               </h2>
@@ -526,7 +532,7 @@ export function SavedPlaces() {
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: Y.muted }} className="mt-2">
+          <p style={{ fontSize: 14, color: Y.muted }} className="mt-2">
             카드를 길게 눌러 순서를 바꾸면 동선과 시간이 실시간으로 다시 계산돼요.
           </p>
 
@@ -556,13 +562,13 @@ export function SavedPlaces() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: active ? Y.point : "#F3F4F6" }}
                   >
-                    <span style={{ fontSize: 12, fontWeight: 900, color: Y.text }}>{idx + 1}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: Y.text }}>{idx + 1}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="truncate">
                       {stop.name}
                     </p>
-                    <p style={{ fontSize: 11, color: Y.muted }} className="truncate">
+                    <p style={{ fontSize: 14, color: Y.muted }} className="truncate">
                       체류 {stop.duration}분 · {stop.memo}
                     </p>
                   </div>
@@ -576,7 +582,7 @@ export function SavedPlaces() {
             <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
               <div className="flex items-center gap-2">
                 <ClipboardList size={14} color="#7A7F87" />
-                <p style={{ fontSize: 12, fontWeight: 800, color: Y.text }}>{selectedStop.name} 커스텀</p>
+                <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>{selectedStop.name} 커스텀</p>
               </div>
               <div className="grid grid-cols-[1fr_auto] gap-2 mt-2">
                 <input
@@ -585,9 +591,9 @@ export function SavedPlaces() {
                   value={selectedStop.duration}
                   onChange={(event) => updateSelectedStopDuration(Number(event.target.value))}
                   className="h-9 px-3 rounded-xl border outline-none"
-                  style={{ borderColor: Y.line, fontSize: 13, color: Y.text, background: "#FFFFFF" }}
+                  style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
                 />
-                <span className="self-center" style={{ fontSize: 12, color: Y.muted }}>
+                <span className="self-center" style={{ fontSize: 14, color: Y.muted }}>
                   분
                 </span>
               </div>
@@ -595,10 +601,10 @@ export function SavedPlaces() {
                 value={selectedStop.memo}
                 onChange={(event) => updateSelectedStopMemo(event.target.value)}
                 className="w-full mt-2 h-[74px] px-3 py-2 rounded-xl border resize-none outline-none"
-                style={{ borderColor: Y.line, fontSize: 13, color: Y.text, background: "#FFFFFF" }}
+                style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
               />
               <div className="mt-2 h-8 px-2.5 rounded-lg inline-flex items-center" style={{ background: Y.pointSoft }}>
-                <span style={{ fontSize: 11, color: Y.pointText, fontWeight: 700 }}>
+                <span style={{ fontSize: 14, color: Y.pointText, fontWeight: 700 }}>
                   방문 꿀팁: {selectedStop.tip}
                 </span>
               </div>
@@ -609,7 +615,7 @@ export function SavedPlaces() {
         <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: Y.pointText }}>Route Assist</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Route Assist</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 가는 길 추천 일정 추가
               </h2>
@@ -619,13 +625,13 @@ export function SavedPlaces() {
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: Y.muted }} className="mt-2">
+          <p style={{ fontSize: 14, color: Y.muted }} className="mt-2">
             동선 사이사이에 들를 만한 밥집, 카페, 체험활동을 추천해드려요. 마음에 들면 바로 일정에 넣을 수 있어요.
           </p>
 
           {segmentSuggestions.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed p-3" style={{ borderColor: Y.line }}>
-              <p style={{ fontSize: 12, color: Y.muted }}>
+              <p style={{ fontSize: 14, color: Y.muted }}>
                 두 개 이상의 장소가 있어야 중간 추천 일정을 보여줄 수 있어요.
               </p>
             </div>
@@ -637,10 +643,10 @@ export function SavedPlaces() {
                   className="rounded-2xl border p-3"
                   style={{ borderColor: Y.line, background: "#FFFEFA" }}
                 >
-                  <p style={{ fontSize: 12, fontWeight: 800, color: Y.text }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>
                     {segment.from.name} → {segment.to.name}
                   </p>
-                  <p style={{ fontSize: 11, color: Y.muted }} className="mt-0.5">
+                  <p style={{ fontSize: 14, color: Y.muted }} className="mt-0.5">
                     이런 건 어떠세요?
                   </p>
 
@@ -661,17 +667,17 @@ export function SavedPlaces() {
                                 style={{
                                   background: suggestionTone[suggestion.category].bg,
                                   color: suggestionTone[suggestion.category].text,
-                                  fontSize: 10,
+                                  fontSize: 14,
                                   fontWeight: 800,
                                 }}
                               >
                                 {suggestion.category}
                               </span>
-                              <p style={{ fontSize: 13, fontWeight: 800, color: Y.text }} className="truncate">
+                              <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="truncate">
                                 {suggestion.name}
                               </p>
                             </div>
-                            <p style={{ fontSize: 11, color: Y.muted }} className="truncate mt-0.5">
+                            <p style={{ fontSize: 14, color: Y.muted }} className="truncate mt-0.5">
                               {suggestion.desc} · {suggestion.duration}분
                             </p>
                           </div>
@@ -685,7 +691,7 @@ export function SavedPlaces() {
                               borderColor: added ? "#D4D8DE" : Y.pointDeep,
                               background: added ? "#F3F5F7" : "#FFF8E9",
                               color: added ? "#8C929A" : Y.pointText,
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: 800,
                               whiteSpace: "nowrap",
                             }}
@@ -703,19 +709,19 @@ export function SavedPlaces() {
 
           <div className="grid grid-cols-3 gap-2 mt-3">
             <div className="rounded-2xl p-3" style={{ background: "#FAFAFB" }}>
-              <p style={{ fontSize: 11, color: Y.muted }}>예상 거리</p>
+              <p style={{ fontSize: 14, color: Y.muted }}>예상 거리</p>
               <p style={{ fontSize: 15, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 {estimatedDistance}km
               </p>
             </div>
             <div className="rounded-2xl p-3" style={{ background: "#FAFAFB" }}>
-              <p style={{ fontSize: 11, color: Y.muted }}>이동 시간</p>
+              <p style={{ fontSize: 14, color: Y.muted }}>이동 시간</p>
               <p style={{ fontSize: 15, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 {toHourMinute(estimatedMoveMinutes)}
               </p>
             </div>
             <div className="rounded-2xl p-3" style={{ background: "#FAFAFB" }}>
-              <p style={{ fontSize: 11, color: Y.muted }}>총 소요</p>
+              <p style={{ fontSize: 14, color: Y.muted }}>총 소요</p>
               <p style={{ fontSize: 15, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 {toHourMinute(estimatedTotalMinutes)}
               </p>
@@ -724,7 +730,7 @@ export function SavedPlaces() {
 
           <div className="mt-2 h-9 px-3 rounded-xl inline-flex items-center gap-2" style={{ background: Y.pointSoft }}>
             <MapPin size={13} color={Y.pointText} />
-            <span style={{ fontSize: 12, color: Y.pointText, fontWeight: 800 }}>
+            <span style={{ fontSize: 14, color: Y.pointText, fontWeight: 800 }}>
               이동 수단 추천: {transportSuggestion}
             </span>
           </div>
@@ -733,7 +739,7 @@ export function SavedPlaces() {
         <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: Y.pointText }}>Benefit Booking</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Benefit Booking</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 맥락 혜택 및 미션 예약
               </h2>
@@ -760,17 +766,17 @@ export function SavedPlaces() {
                     {selected && <Check size={12} color={Y.text} strokeWidth={3} />}
                   </button>
                   <div className="flex-1">
-                    <p style={{ fontSize: 11, color: Y.pointText, fontWeight: 800 }}>{benefit.brand}</p>
+                    <p style={{ fontSize: 14, color: Y.pointText, fontWeight: 800 }}>{benefit.brand}</p>
                     <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }} className="mt-0.5">
                       {benefit.title}
                     </p>
-                    <p style={{ fontSize: 12, color: Y.muted }} className="mt-0.5">
+                    <p style={{ fontSize: 14, color: Y.muted }} className="mt-0.5">
                       {benefit.desc}
                     </p>
                   </div>
                   <span
                     className="h-7 px-2 rounded-lg inline-flex items-center"
-                    style={{ background: Y.pointSoft, color: Y.pointText, fontSize: 11, fontWeight: 900 }}
+                    style={{ background: Y.pointSoft, color: Y.pointText, fontSize: 14, fontWeight: 900 }}
                   >
                     +{benefit.rewardPoint}P
                   </span>
@@ -780,14 +786,14 @@ export function SavedPlaces() {
           </div>
 
           <div className="mt-3 rounded-2xl p-3 border" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
-            <p style={{ fontSize: 12, fontWeight: 800, color: Y.text }}>예상 자산 리포트</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>예상 자산 리포트</p>
             <div className="flex items-end justify-between mt-2">
               <div>
-                <p style={{ fontSize: 11, color: Y.muted }}>예상 포인트</p>
+                <p style={{ fontSize: 14, color: Y.muted }}>예상 포인트</p>
                 <p style={{ fontSize: 18, color: Y.text, fontWeight: 900 }}>{expectedPoint.toLocaleString()}P</p>
               </div>
               <div className="text-right">
-                <p style={{ fontSize: 11, color: Y.muted }}>예상 정복률</p>
+                <p style={{ fontSize: 14, color: Y.muted }}>예상 정복률</p>
                 <p style={{ fontSize: 18, color: Y.text, fontWeight: 900 }}>{expectedConquestRate}%</p>
               </div>
             </div>
@@ -797,7 +803,7 @@ export function SavedPlaces() {
         <section className="rounded-3xl p-4 border" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: Y.pointText }}>Finalize</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Finalize</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
                 여정 확정 및 전송
               </h2>
@@ -807,18 +813,18 @@ export function SavedPlaces() {
             </div>
           </div>
 
-          <p style={{ fontSize: 12, color: Y.muted }} className="mt-2">
+          <p style={{ fontSize: 14, color: Y.muted }} className="mt-2">
             현재 편집 루틴을 저장하고 담깨비땅 실행 모드로 바로 넘길 수 있어요.
           </p>
 
           <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
-            <p style={{ fontSize: 12, fontWeight: 800, color: Y.text }}>여행 날짜 지정</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>여행 날짜 지정</p>
             <input
               type="date"
               value={travelDate}
               onChange={(event) => setTravelDate(event.target.value)}
               className="w-full mt-2 h-10 px-3 rounded-xl border outline-none"
-              style={{ borderColor: Y.line, fontSize: 13, color: Y.text, background: "#FFFFFF" }}
+              style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
             />
           </div>
 

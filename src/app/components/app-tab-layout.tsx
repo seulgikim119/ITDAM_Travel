@@ -69,13 +69,12 @@ export function AppLayout() {
               <button
                 key={tab.path}
                 onClick={() => handleTabClick(tab.path)}
-                className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${
-                  active ? "text-[#E8A830]" : "text-[#8B95A1]"
-                } ${disabledForGuest ? "opacity-60" : ""}`}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${active ? "text-[#E8A830]" : "text-[#8B95A1]"
+                  } ${disabledForGuest ? "opacity-60" : ""}`}
                 aria-disabled={disabledForGuest}
               >
-                <tab.icon size={22} strokeWidth={active ? 2.2 : 1.7} />
-                <span style={{ fontSize: 10, fontWeight: active ? 700 : 500 }}>{tab.label}</span>
+                <tab.icon size={14} strokeWidth={active ? 2.2 : 1.7} />
+                <span style={{ fontSize: 14, fontWeight: active ? 700 : 500 }}>{tab.label}</span>
               </button>
             );
           })}

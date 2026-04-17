@@ -27,13 +27,13 @@ export function Recommendation() {
           className="rounded-2xl p-4 mb-5"
           style={{ background: "linear-gradient(135deg, rgba(240,192,112,0.12), rgba(232,168,48,0.12))" }}
         >
-          <p className="text-[#E8A830]" style={{ fontSize: 12, fontWeight: 700 }}>기록 3회 달성!</p>
+          <p className="text-[#E8A830]" style={{ fontSize: 14, fontWeight: 700 }}>기록 3회 달성!</p>
           <p className="text-[#2C2C2A] mt-1" style={{ fontSize: 18, fontWeight: 700 }}>취향이 이어졌어요</p>
         </motion.div>
 
         {/* Preference */}
         <div className="mb-5">
-          <span className="text-[#E8A830] bg-[#F0C070]/15 px-3 py-1.5 rounded-full" style={{ fontSize: 12, fontWeight: 600 }}>
+          <span className="text-[#E8A830] bg-[#F0C070]/15 px-3 py-1.5 rounded-full" style={{ fontSize: 14, fontWeight: 600 }}>
             바다 + 맛집 중심 취향
           </span>
         </div>
@@ -50,7 +50,7 @@ export function Recommendation() {
           </div>
           <div className="p-4">
             <p className="text-[#2C2C2A]" style={{ fontSize: 18, fontWeight: 700 }}>경주 반나절 코스</p>
-            <p className="text-[#8E8E93] mt-1" style={{ fontSize: 13 }}>이전 여행과 비슷한 스타일</p>
+            <p className="text-[#8E8E93] mt-1" style={{ fontSize: 14 }}>이전 여행과 비슷한 스타일</p>
             <button
               onClick={() => navigate("/create-route")}
               className="mt-3 h-[38px] px-5 rounded-xl text-[#2C2C2A]"
@@ -63,7 +63,7 @@ export function Recommendation() {
 
         {/* Discovery */}
         <div className="mb-4">
-          <p className="text-[#E8A830] mb-3" style={{ fontSize: 13, fontWeight: 600 }}>새로운 발견</p>
+          <p className="text-[#E8A830] mb-3" style={{ fontSize: 14, fontWeight: 600 }}>새로운 발견</p>
           <div className="rounded-2xl bg-white overflow-hidden shadow-sm">
             <div className="h-[100px] overflow-hidden relative">
               <ImageWithFallback
@@ -75,7 +75,7 @@ export function Recommendation() {
             </div>
             <div className="p-4">
               <p className="text-[#2C2C2A]" style={{ fontSize: 16, fontWeight: 700 }}>통영 당일치기</p>
-              <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 13 }}>아직 안 가본 남해 스타일</p>
+              <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 14 }}>아직 안 가본 남해 스타일</p>
             </div>
           </div>
         </div>

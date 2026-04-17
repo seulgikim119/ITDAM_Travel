@@ -92,7 +92,7 @@ export function CreateRoute() {
 
           {showResults && searchResults.length > 0 && (
             <div className="mt-2 bg-white rounded-2xl shadow-lg overflow-hidden">
-              <p className="px-4 pt-3 pb-1 text-[#8E8E93]" style={{ fontSize: 12, fontWeight: 600 }}>
+              <p className="px-4 pt-3 pb-1 text-[#8E8E93]" style={{ fontSize: 14, fontWeight: 600 }}>
                 검색 결과
               </p>
               {searchResults.map((r) => (
@@ -116,7 +116,7 @@ export function CreateRoute() {
 
         {isGeochang && (
           <div className="mb-6 mt-2">
-            <p className="text-[#8E8E93] mb-3" style={{ fontSize: 13, fontWeight: 600 }}>
+            <p className="text-[#8E8E93] mb-3" style={{ fontSize: 14, fontWeight: 600 }}>
               <Star size={12} className="inline text-[#E8A830] mr-1" />
               거창 추천 장소
             </p>
@@ -138,12 +138,12 @@ export function CreateRoute() {
                         className={`px-2 py-0.5 rounded-full ${
                           place.tag === "역사" ? "bg-[#E8A830]/12 text-[#E8A830]" : "bg-[#34C759]/10 text-[#34C759]"
                         }`}
-                        style={{ fontSize: 10, fontWeight: 600 }}
+                        style={{ fontSize: 14, fontWeight: 600 }}
                       >
                         {place.tag}
                       </span>
                     </div>
-                    <p className="text-[#8E8E93] mt-0.5 truncate" style={{ fontSize: 12 }}>
+                    <p className="text-[#8E8E93] mt-0.5 truncate" style={{ fontSize: 14 }}>
                       {place.desc}
                     </p>
                   </div>
@@ -154,7 +154,7 @@ export function CreateRoute() {
         )}
 
         <div className="mb-6 mt-8">
-          <p className="text-[#8E8E93] mb-3" style={{ fontSize: 13, fontWeight: 600 }}>
+          <p className="text-[#8E8E93] mb-3" style={{ fontSize: 14, fontWeight: 600 }}>
             여행 기간
           </p>
           <div className="flex gap-2">
@@ -174,7 +174,7 @@ export function CreateRoute() {
         </div>
 
         <div className="mb-8">
-          <p className="text-[#8E8E93] mb-3" style={{ fontSize: 13, fontWeight: 600 }}>
+          <p className="text-[#8E8E93] mb-3" style={{ fontSize: 14, fontWeight: 600 }}>
             인원
           </p>
           <div className="flex gap-2">

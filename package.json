@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "font:min14": "node scripts/enforce-min-font-size.mjs",
     "build": "vite build",
     "dev": "vite"
   },

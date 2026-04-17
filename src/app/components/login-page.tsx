@@ -9,6 +9,10 @@ type LoginLocationState = {
 };
 
 export function Login() {
+  const ITDAM_DUMMY_NAME = "\uAE40\uC787\uB2F4";
+  const ITDAM_DUMMY_EMAIL = "Itdam@itdam.com";
+  const ITDAM_QUICK_LOGIN_LABEL = "ITDAM \uACC4\uC815\uC73C\uB85C \uB85C\uADF8\uC778";
+
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LoginLocationState | null;
@@ -23,6 +27,11 @@ export function Login() {
     if (!canSubmit) return;
     login({ name, email });
     navigate(redirectTo, { replace: true });
+  };
+
+  const handleFillItdamAccount = () => {
+    setName(ITDAM_DUMMY_NAME);
+    setEmail(ITDAM_DUMMY_EMAIL);
   };
 
   return (
@@ -41,7 +50,7 @@ export function Login() {
 
       <form onSubmit={handleSubmit} className="px-5 pt-6 space-y-4">
         <div>
-          <p className="text-[#2C2C2A]" style={{ fontSize: 13, fontWeight: 700 }}>
+          <p className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 700 }}>
             이름
           </p>
           <input
@@ -54,7 +63,7 @@ export function Login() {
         </div>
 
         <div>
-          <p className="text-[#2C2C2A]" style={{ fontSize: 13, fontWeight: 700 }}>
+          <p className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 700 }}>
             이메일
           </p>
           <input
@@ -65,6 +74,15 @@ export function Login() {
             style={{ fontSize: 14 }}
           />
         </div>
+
+        <button
+          type="button"
+          onClick={handleFillItdamAccount}
+          className="w-full h-11 rounded-2xl border border-[#E8E8E8] bg-white text-[#2C2C2A]"
+          style={{ fontSize: 14, fontWeight: 700 }}
+        >
+          {ITDAM_QUICK_LOGIN_LABEL}
+        </button>
 
         <button
           type="submit"
@@ -80,7 +98,7 @@ export function Login() {
           type="button"
           onClick={() => navigate("/app", { replace: true })}
           className="w-full h-10 text-[#8E8E93]"
-          style={{ fontSize: 13, fontWeight: 700 }}
+          style={{ fontSize: 14, fontWeight: 700 }}
         >
           비로그인으로 계속
         </button>

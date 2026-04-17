@@ -15,7 +15,7 @@ export function RecordList() {
         <StatusBar />
         <div className="px-5 pt-2 pb-4 flex items-center justify-between">
           <div>
-            <p className="text-[#5C9B5F]" style={{ fontSize: 11, fontWeight: 700 }}>
+            <p className="text-[#5C9B5F]" style={{ fontSize: 14, fontWeight: 700 }}>
               DAMGGAEBI ARCHIVE
             </p>
             <h1 className="text-[#1F2C20] mt-0.5" style={{ fontSize: 22, fontWeight: 800 }}>
@@ -38,7 +38,7 @@ export function RecordList() {
             onClick={() => navigate("/record-input")}
             className="mt-3 h-10 px-4 rounded-xl text-white inline-flex items-center gap-1.5"
             style={{
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 700,
               background: "linear-gradient(135deg, #6BAF6E, #3E7D42)",
             }}
@@ -66,7 +66,7 @@ export function RecordList() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
                 <span
                   className="absolute top-3 left-3 px-2 py-1 rounded-lg bg-black/35 text-white"
-                  style={{ fontSize: 11, fontWeight: 700 }}
+                  style={{ fontSize: 14, fontWeight: 700 }}
                 >
                   {record.date}
                 </span>
@@ -74,7 +74,7 @@ export function RecordList() {
                   <span
                     className="absolute top-3 right-3 px-2 py-1 rounded-lg text-white flex items-center gap-1"
                     style={{
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: 700,
                       background: "linear-gradient(135deg, #6BAF6E, #3E7D42)",
                     }}
@@ -88,7 +88,7 @@ export function RecordList() {
                 <p className="text-[#1F2C20]" style={{ fontSize: 16, fontWeight: 800 }}>
                   {record.title}
                 </p>
-                <p className="text-[#5E6E60] mt-1" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                <p className="text-[#5E6E60] mt-1" style={{ fontSize: 14, lineHeight: 1.5 }}>
                   {record.memo}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -96,7 +96,7 @@ export function RecordList() {
                     <span
                       key={tag}
                       className="px-2 py-0.5 rounded-md bg-[#EDF5ED] text-[#3E7D42]"
-                      style={{ fontSize: 11, fontWeight: 600 }}
+                      style={{ fontSize: 14, fontWeight: 600 }}
                     >
                       {tag}
                     </span>

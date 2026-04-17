@@ -42,7 +42,7 @@ export function RecordInput() {
               <p className="text-[#1F2C20]" style={{ fontSize: 14, fontWeight: 800 }}>
                 담깨비 기록 가이드
               </p>
-              <p className="text-[#5E6E60]" style={{ fontSize: 12 }}>
+              <p className="text-[#5E6E60]" style={{ fontSize: 14 }}>
                 여행의 순간을 짧게 남겨도 충분해요.
               </p>
             </div>
@@ -50,7 +50,7 @@ export function RecordInput() {
         </div>
 
         <div className="mt-4 rounded-2xl bg-white border border-[#E9F0EA] p-4">
-          <label className="block text-[#1F2C20]" style={{ fontSize: 12, fontWeight: 700 }}>
+          <label className="block text-[#1F2C20]" style={{ fontSize: 14, fontWeight: 700 }}>
             제목
           </label>
           <input
@@ -61,7 +61,7 @@ export function RecordInput() {
             style={{ fontSize: 14 }}
           />
 
-          <label className="block text-[#1F2C20] mt-4" style={{ fontSize: 12, fontWeight: 700 }}>
+          <label className="block text-[#1F2C20] mt-4" style={{ fontSize: 14, fontWeight: 700 }}>
             메모
           </label>
           <textarea
@@ -75,7 +75,7 @@ export function RecordInput() {
           <button
             onClick={handleAnalyze}
             className="mt-3 w-full h-10 rounded-xl text-[#1F2C20] flex items-center justify-center gap-1.5"
-            style={{ background: "linear-gradient(135deg, #F0C070, #E8A830)", fontSize: 13, fontWeight: 700 }}
+            style={{ background: "linear-gradient(135deg, #F0C070, #E8A830)", fontSize: 14, fontWeight: 700 }}
           >
             <Sparkles size={14} />
             기록 요약 분석하기
@@ -91,10 +91,10 @@ export function RecordInput() {
 
         {phase !== "idle" && (
           <div className="mt-4 rounded-2xl border p-4" style={{ borderColor: "#D8EAD9", background: "#F3FAF3" }}>
-            <p className="text-[#3E7D42]" style={{ fontSize: 12, fontWeight: 800 }}>
+            <p className="text-[#3E7D42]" style={{ fontSize: 14, fontWeight: 800 }}>
               {phase === "analyzing" ? "담깨비가 분석 중..." : "분석 완료"}
             </p>
-            <p className="text-[#3D5C41] mt-1" style={{ fontSize: 13 }}>
+            <p className="text-[#3D5C41] mt-1" style={{ fontSize: 14 }}>
               {phase === "analyzing"
                 ? "기록 내용을 정리하고 추천 태그를 만들고 있어요."
                 : "추천 태그: #야경 #도시산책 #감성루트"}

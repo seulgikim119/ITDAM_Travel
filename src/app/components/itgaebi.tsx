@@ -11,7 +11,7 @@ export function Itgaebi({ size = 48, message }: { size?: number; message?: strin
           animate={{ opacity: 1, y: 0 }}
           className="mt-1 px-3 py-1 rounded-full bg-[#F0C070]/15"
         >
-          <span style={{ fontSize: 11, fontWeight: 500 }} className="text-[#E8A830]">
+          <span style={{ fontSize: 14, fontWeight: 500 }} className="text-[#E8A830]">
             {message}
           </span>
         </motion.div>

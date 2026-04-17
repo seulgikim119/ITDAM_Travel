@@ -64,28 +64,28 @@ export function RoutineDetail() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
             <div className="absolute left-4 bottom-4 text-white">
               <p style={{ fontSize: 20, fontWeight: 800 }}>{routine.title}</p>
-              <p className="text-white/85" style={{ fontSize: 13 }}>{routine.subtitle}</p>
+              <p className="text-white/85" style={{ fontSize: 14 }}>{routine.subtitle}</p>
             </div>
           </div>
 
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-[#F8FAFC] p-3">
-                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 11, fontWeight: 700 }}>
+                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 14, fontWeight: 700 }}>
                   <Clock3 size={12} />
                   소요
                 </div>
                 <p className="text-[#191F28]" style={{ fontSize: 14, fontWeight: 800 }}>{routine.duration}</p>
               </div>
               <div className="rounded-xl bg-[#F8FAFC] p-3">
-                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 11, fontWeight: 700 }}>
+                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 14, fontWeight: 700 }}>
                   <Coins size={12} />
                   예산
                 </div>
                 <p className="text-[#191F28]" style={{ fontSize: 14, fontWeight: 800 }}>{routine.budget}</p>
               </div>
               <div className="rounded-xl bg-[#F8FAFC] p-3">
-                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 11, fontWeight: 700 }}>
+                <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 14, fontWeight: 700 }}>
                   <MapPinned size={12} />
                   지역
                 </div>
@@ -102,13 +102,13 @@ export function RoutineDetail() {
           <div className="space-y-2">
             {routine.stops.map((stop, index) => (
               <div key={stop.name} className="rounded-2xl border border-[#EEF0F4] p-3">
-                <p className="text-[#3182F6]" style={{ fontSize: 12, fontWeight: 800 }}>
+                <p className="text-[#3182F6]" style={{ fontSize: 14, fontWeight: 800 }}>
                   STOP {index + 1}
                 </p>
                 <p className="text-[#191F28] mt-0.5" style={{ fontSize: 15, fontWeight: 700 }}>
                   {stop.name}
                 </p>
-                <p className="text-[#6B7684] mt-1" style={{ fontSize: 12 }}>{stop.note}</p>
+                <p className="text-[#6B7684] mt-1" style={{ fontSize: 14 }}>{stop.note}</p>
               </div>
             ))}
           </div>

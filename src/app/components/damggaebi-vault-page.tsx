@@ -168,7 +168,7 @@ export function MyPage() {
           <h1 className="text-white" style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.2 }}>
             담깨비 <span className="text-[#34C759]">VAULT</span>
           </h1>
-          <p className="mt-1 text-[#A6F1B7]" style={{ fontSize: 12, fontWeight: 600 }}>
+          <p className="mt-1 text-[#A6F1B7]" style={{ fontSize: 14, fontWeight: 600 }}>
             내 자산과 기록을 한눈에 보는 페이지
           </p>
         </div>
@@ -182,14 +182,14 @@ export function MyPage() {
                   <p className="text-[#2C2C2A]" style={{ fontSize: 18, fontWeight: 700 }}>
                     {auth.user.name}
                   </p>
-                  <p className="text-[#8E8E93]" style={{ fontSize: 13 }}>
+                  <p className="text-[#8E8E93]" style={{ fontSize: 14 }}>
                     {auth.user.email}
                   </p>
                 </div>
                 <button
                   onClick={() => logout()}
                   className="h-9 px-3 rounded-xl border border-[#D6EEDC] text-[#3F6E4D] flex items-center gap-1.5"
-                  style={{ fontSize: 12, fontWeight: 700 }}
+                  style={{ fontSize: 14, fontWeight: 700 }}
                 >
                   <LogOut size={14} />
                   로그아웃
@@ -202,7 +202,7 @@ export function MyPage() {
                   <p className="text-[#2C2C2A]" style={{ fontSize: 17, fontWeight: 700 }}>
                     지금은 비로그인 상태예요
                   </p>
-                  <p className="text-[#8E8E93] mt-1" style={{ fontSize: 13 }}>
+                  <p className="text-[#8E8E93] mt-1" style={{ fontSize: 14 }}>
                     로그인하면 취향, 기록, 루트를 내 계정에 저장할 수 있어요.
                   </p>
                 </div>
@@ -210,7 +210,7 @@ export function MyPage() {
                   onClick={() => navigate("/login", { state: { from: "/app/my" } })}
                   className="h-9 px-3 rounded-xl text-[#2C2C2A] flex items-center gap-1.5"
                   style={{
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: 800,
                     background: "linear-gradient(135deg, #57D476, #34C759)",
                   }}
@@ -229,7 +229,7 @@ export function MyPage() {
           {stats.map((s) => (
             <div key={s.label} className="bg-white rounded-2xl p-4 text-center shadow-sm">
               <p style={{ fontSize: 22, fontWeight: 700, color: auth.isLoggedIn ? s.color : "#C7C7CC" }}>{s.num}</p>
-              <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 11 }}>
+              <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 14 }}>
                 {s.label}
               </p>
             </div>
@@ -241,7 +241,7 @@ export function MyPage() {
         <section className="bg-white rounded-2xl p-4 shadow-sm border border-[#E6F3EA]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[#5C8B67]" style={{ fontSize: 11, fontWeight: 800 }}>
+              <p className="text-[#5C8B67]" style={{ fontSize: 14, fontWeight: 800 }}>
                 조각 창고
               </p>
               <h2 className="text-[#1E2B22] mt-0.5" style={{ fontSize: 20, fontWeight: 800 }}>
@@ -257,19 +257,19 @@ export function MyPage() {
             <>
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
-                  <p style={{ fontSize: 11, color: "#6B7785" }}>사용 가능 쿠폰</p>
+                  <p style={{ fontSize: 14, color: "#6B7785" }}>사용 가능 쿠폰</p>
                   <p style={{ fontSize: 18, fontWeight: 800, color: "#1E2B22" }} className="mt-0.5">
                     {couponAssets.length}장
                   </p>
                 </div>
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
-                  <p style={{ fontSize: 11, color: "#6B7785" }}>만료 임박</p>
+                  <p style={{ fontSize: 14, color: "#6B7785" }}>만료 임박</p>
                   <p style={{ fontSize: 18, fontWeight: 800, color: "#1E2B22" }} className="mt-0.5">
                     {expiringCoupons.length}건
                   </p>
                 </div>
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
-                  <p style={{ fontSize: 11, color: "#6B7785" }}>총 경제 이득</p>
+                  <p style={{ fontSize: 14, color: "#6B7785" }}>총 경제 이득</p>
                   <p style={{ fontSize: 18, fontWeight: 800, color: "#1FA84A" }} className="mt-0.5">
                     {formatWon(totalEconomicBenefit)}
                   </p>
@@ -280,13 +280,13 @@ export function MyPage() {
                 <div className="mt-3 rounded-xl border border-[#D8EFDE] bg-[#F2FBF5] p-3">
                   <div className="flex items-center gap-1.5">
                     <CalendarClock size={14} className="text-[#1FA84A]" />
-                    <p style={{ fontSize: 12, fontWeight: 800, color: "#1FA84A" }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A" }}>
                       유효기간 임박 쿠폰 알림
                     </p>
                   </div>
                   <div className="mt-1.5 space-y-1">
                     {expiringCoupons.map((coupon) => (
-                      <p key={coupon.id} style={{ fontSize: 12, color: "#2F3A33" }}>
+                      <p key={coupon.id} style={{ fontSize: 14, color: "#2F3A33" }}>
                         {coupon.title} · {coupon.dDay === 0 ? "오늘 만료" : `${coupon.dDay}일 남음`}
                       </p>
                     ))}
@@ -307,20 +307,20 @@ export function MyPage() {
                         <div className="flex items-center gap-2">
                           <span
                             className="h-6 px-2 rounded-full inline-flex items-center gap-1"
-                            style={{ background: badge.bg, color: badge.text, fontSize: 10, fontWeight: 800 }}
+                            style={{ background: badge.bg, color: badge.text, fontSize: 14, fontWeight: 800 }}
                           >
                             <Icon size={11} />
                             {badge.label}
                           </span>
-                          <p className="truncate" style={{ fontSize: 13, fontWeight: 800, color: "#1E2B22" }}>
+                          <p className="truncate" style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}>
                             {asset.title}
                           </p>
                         </div>
-                        <p className="truncate mt-0.5" style={{ fontSize: 12, color: "#6B7785" }}>
+                        <p className="truncate mt-0.5" style={{ fontSize: 14, color: "#6B7785" }}>
                           {asset.desc}
                         </p>
                       </div>
-                      <p style={{ fontSize: 12, fontWeight: 800, color: "#1FA84A", whiteSpace: "nowrap" }}>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A", whiteSpace: "nowrap" }}>
                         +{formatWon(asset.valueWon)}
                       </p>
                     </article>
@@ -330,7 +330,7 @@ export function MyPage() {
             </>
           ) : (
             <div className="mt-3 rounded-xl border border-dashed border-[#D9E6DE] bg-[#FAFCFB] p-3">
-              <p style={{ fontSize: 12, color: "#6B7785" }}>
+              <p style={{ fontSize: 14, color: "#6B7785" }}>
                 로그인 후 쿠폰, 포인트, 수집 아이템을 확인할 수 있어요.
               </p>
             </div>
@@ -359,16 +359,16 @@ export function MyPage() {
                   "radial-gradient(circle at 25% 20%, rgba(52,199,89,0.45), transparent 45%), radial-gradient(circle at 70% 68%, rgba(31,168,74,0.42), transparent 38%), linear-gradient(160deg, #102318 0%, #173021 45%, #1C3C2A 100%)",
               }}
             >
-              <p style={{ fontSize: 12, color: "#A7F2B7", fontWeight: 700 }}>ITDAM ASSET PROOF</p>
+              <p style={{ fontSize: 14, color: "#A7F2B7", fontWeight: 700 }}>ITDAM ASSET PROOF</p>
               <div>
                 <p className="text-white" style={{ fontSize: 24, lineHeight: 1.25, fontWeight: 800 }}>
                   {storyCaption}
                 </p>
-                <p style={{ fontSize: 12, color: "#C8F7D2" }} className="mt-2">
+                <p style={{ fontSize: 14, color: "#C8F7D2" }} className="mt-2">
                   감성 히트맵 스토리 레이아웃으로 생성
                 </p>
               </div>
-              <p style={{ fontSize: 11, color: "#90DEA2", fontWeight: 700 }}>
+              <p style={{ fontSize: 14, color: "#90DEA2", fontWeight: 700 }}>
                 #{auth.isLoggedIn ? auth.user?.name ?? "잇담유저" : "게스트"} #{assetProofCount + 1}번째 증명
               </p>
             </div>
@@ -378,14 +378,14 @@ export function MyPage() {
             <button
               onClick={() => setAssetProofCount((prev) => prev + 1)}
               className="h-10 rounded-xl text-[#1C2A20] inline-flex items-center justify-center gap-1.5"
-              style={{ fontSize: 12, fontWeight: 800, background: "linear-gradient(135deg, #57D476, #34C759)" }}
+              style={{ fontSize: 14, fontWeight: 800, background: "linear-gradient(135deg, #57D476, #34C759)" }}
             >
               <ImageUp size={14} />
               스토리 레이아웃 생성
             </button>
             <button
               className="h-10 rounded-xl border border-[#D6EEDC] text-[#3F6E4D] inline-flex items-center justify-center gap-1.5"
-              style={{ fontSize: 12, fontWeight: 800, background: "#F3FBF5" }}
+              style={{ fontSize: 14, fontWeight: 800, background: "#F3FBF5" }}
             >
               <Download size={14} />
               이미지 저장

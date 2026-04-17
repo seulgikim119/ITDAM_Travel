@@ -58,12 +58,12 @@ export function RouteResult() {
                   <p className="text-[#2C2C2A]" style={{ fontSize: 16, fontWeight: 600 }}>
                     {spot.name}
                   </p>
-                  <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 13 }}>
+                  <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 14 }}>
                     {spot.time} · {spot.move}
                   </p>
                   <span
                     className={`inline-block mt-2 px-3 py-0.5 rounded-full ${tagColors[spot.tag]}`}
-                    style={{ fontSize: 12, fontWeight: 600 }}
+                    style={{ fontSize: 14, fontWeight: 600 }}
                   >
                     {spot.tag}
                   </span>

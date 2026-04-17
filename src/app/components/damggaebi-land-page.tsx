@@ -142,7 +142,7 @@ export function TravelSketchbook() {
             <h1 className="text-white" style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.2 }}>
               담깨비 <span style={{ color: "#34C759" }}>LAND</span>
             </h1>
-            <p className="mt-1" style={{ fontSize: 12, fontWeight: 600, color: "#A6F1B7" }}>
+            <p className="mt-1" style={{ fontSize: 14, fontWeight: 600, color: "#A6F1B7" }}>
               점유율과 기록을 한눈에 보는 정복 대시보드
             </p>
           </div>
@@ -152,7 +152,7 @@ export function TravelSketchbook() {
         <div className="px-4 mt-3">
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 정복률
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -160,7 +160,7 @@ export function TravelSketchbook() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 총 방문
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -168,7 +168,7 @@ export function TravelSketchbook() {
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-white/8 backdrop-blur-sm px-3 py-2.5">
-              <p className="text-white/60" style={{ fontSize: 10, fontWeight: 600 }}>
+              <p className="text-white/60" style={{ fontSize: 14, fontWeight: 600 }}>
                 오늘 채굴
               </p>
               <p className="text-white mt-1" style={{ fontSize: 24, fontWeight: 800 }}>
@@ -194,19 +194,19 @@ export function TravelSketchbook() {
 
           <div className="grid grid-cols-3 gap-2 mt-3">
             <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>정복률</p>
+              <p style={{ fontSize: 14, color: G.muted }}>정복률</p>
               <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 {conquestRate}%
               </p>
             </div>
             <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>총 방문 횟수</p>
+              <p style={{ fontSize: 14, color: G.muted }}>총 방문 횟수</p>
               <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 {totalVisitCount}회
               </p>
             </div>
             <div className="rounded-2xl p-3" style={{ background: "#F8FAF8" }}>
-              <p style={{ fontSize: 11, color: G.muted }}>오늘 채굴</p>
+              <p style={{ fontSize: 14, color: G.muted }}>오늘 채굴</p>
               <p style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 {todayMinedCount}개
               </p>
@@ -271,7 +271,7 @@ export function TravelSketchbook() {
                       x={province.x}
                       y={province.y + 3}
                       textAnchor="middle"
-                      style={{ fontSize: 9, fontWeight: 800, fill: "#124620" }}
+                      style={{ fontSize: 14, fontWeight: 800, fill: "#124620" }}
                     >
                       {province.visitCount}
                     </text>
@@ -279,7 +279,7 @@ export function TravelSketchbook() {
                       x={province.x}
                       y={province.y - r - 5}
                       textAnchor="middle"
-                      style={{ fontSize: 8, fontWeight: 700, fill: "#1D5D2D" }}
+                      style={{ fontSize: 14, fontWeight: 700, fill: "#1D5D2D" }}
                     >
                       {province.name}
                     </text>
@@ -308,7 +308,7 @@ export function TravelSketchbook() {
           </div>
 
           <div className="flex items-center justify-between mt-3">
-            <p style={{ fontSize: 12, color: G.muted }}>
+            <p style={{ fontSize: 14, color: G.muted }}>
               버블 크기 = 자치도별 방문 횟수 · 이동 {routeDistanceKm}km
             </p>
           </div>
@@ -317,13 +317,13 @@ export function TravelSketchbook() {
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>플랜 완료건</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: G.pointDeep }}>플랜 완료건</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 여정 지도 그리기
               </h2>
             </div>
             <div className="h-7 px-2.5 rounded-lg inline-flex items-center" style={{ background: G.pointSoft }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: G.pointDeep }}>
                 {completedPlans.length}건
               </span>
             </div>
@@ -331,7 +331,7 @@ export function TravelSketchbook() {
 
           {completedPlans.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed p-3" style={{ borderColor: G.line }}>
-              <p style={{ fontSize: 12, color: G.muted }}>
+              <p style={{ fontSize: 14, color: G.muted }}>
                 아직 확정된 플랜이 없어요. 잇깨비픽에서 여정을 확정하면 여기에 쌓입니다.
               </p>
             </div>
@@ -344,13 +344,13 @@ export function TravelSketchbook() {
                   style={{ borderColor: G.line, background: "#FBFDFC" }}
                 >
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 800, color: G.text }}>{plan.title}</p>
-                    <p style={{ fontSize: 11, color: G.muted }} className="mt-0.5">
+                    <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{plan.title}</p>
+                    <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
                       {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 11, fontWeight: 700, color: G.pointDeep }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: G.pointDeep }}>
                       {formatDateLabel(plan.finalizedAt)}
                     </span>
                     <button
@@ -373,13 +373,13 @@ export function TravelSketchbook() {
         <section className="rounded-3xl p-4 border" style={{ background: G.card, borderColor: G.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>여행 기록</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: G.pointDeep }}>여행 기록</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: G.text }} className="mt-0.5">
                 보따리 담기
               </h2>
             </div>
             <div className="h-7 px-2.5 rounded-lg inline-flex items-center" style={{ background: G.pointSoft }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: G.pointDeep }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: G.pointDeep }}>
                 {journeyRecords.length}개
               </span>
             </div>
@@ -401,14 +401,14 @@ export function TravelSketchbook() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
                   <span
                     className="absolute top-2.5 left-2.5 px-2 py-1 rounded-lg bg-black/35 text-white"
-                    style={{ fontSize: 11, fontWeight: 700 }}
+                    style={{ fontSize: 14, fontWeight: 700 }}
                   >
                     {record.date} · {record.region}
                   </span>
                 </div>
                 <div className="p-3">
                   <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{record.title}</p>
-                  <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
+                  <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
                     {record.memo}
                   </p>
                 </div>
@@ -439,8 +439,8 @@ export function TravelSketchbook() {
                   style={{ borderColor: claimed ? "#C8D8CB" : G.line, background: claimed ? "#F0F4F1" : "#FBFDFC" }}
                 >
                   <div>
-                    <p style={{ fontSize: 12, fontWeight: 800, color: G.text }}>{mine.brand}</p>
-                    <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
+                    <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{mine.brand}</p>
+                    <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
                       {mine.reward}
                     </p>
                   </div>
@@ -451,7 +451,7 @@ export function TravelSketchbook() {
                     style={{
                       background: claimed ? "#DFE7E1" : G.pointSoft,
                       color: claimed ? "#7A8A7D" : G.pointDeep,
-                      fontSize: 11,
+                      fontSize: 14,
                       fontWeight: 800,
                     }}
                   >
@@ -464,7 +464,7 @@ export function TravelSketchbook() {
 
           <div className="mt-3 h-9 px-3 rounded-xl inline-flex items-center gap-2" style={{ background: G.pointSoft }}>
             <BadgeCheck size={13} style={{ color: G.pointDeep }} />
-            <span style={{ fontSize: 12, color: G.pointDeep, fontWeight: 800 }}>
+            <span style={{ fontSize: 14, color: G.pointDeep, fontWeight: 800 }}>
               오늘 누적 채굴 포인트: {todayMinedPoint.toLocaleString()}P
             </span>
           </div>
@@ -476,7 +476,7 @@ export function TravelSketchbook() {
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[96px] z-40">
           <div
             className="px-4 py-2 rounded-xl shadow-lg"
-            style={{ background: "rgba(18, 28, 19, 0.92)", color: "#E7F9EC", fontSize: 12, fontWeight: 700 }}
+            style={{ background: "rgba(18, 28, 19, 0.92)", color: "#E7F9EC", fontSize: 14, fontWeight: 700 }}
           >
             {popupText}
           </div>

@@ -105,7 +105,7 @@ export function SnapRoute() {
                   <p className="text-[#2C2C2A]" style={{ fontSize: 15, fontWeight: 600 }}>
                     잇깨비가 분석 중...
                   </p>
-                  <p className="text-[#8E8E93]" style={{ fontSize: 12 }}>
+                  <p className="text-[#8E8E93]" style={{ fontSize: 14 }}>
                     링크에서 장소와 동선을 추출하고 있어요
                   </p>
                 </div>
@@ -119,7 +119,7 @@ export function SnapRoute() {
                   transition={{ duration: 0.1 }}
                 />
               </div>
-              <p className="text-[#8E8E93] text-right mt-1" style={{ fontSize: 11 }}>
+              <p className="text-[#8E8E93] text-right mt-1" style={{ fontSize: 14 }}>
                 {progress}%
               </p>
             </motion.div>
@@ -134,7 +134,7 @@ export function SnapRoute() {
                     분석 완료
                   </span>
                 </div>
-                <p className="text-[#2C2C2A]" style={{ fontSize: 13 }}>
+                <p className="text-[#2C2C2A]" style={{ fontSize: 14 }}>
                   3개의 장소가 자동으로 추출됐어요
                 </p>
               </div>
@@ -142,13 +142,13 @@ export function SnapRoute() {
               <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Clock size={14} className="text-[#E8A830]" />
-                  <span className="text-[#E8A830]" style={{ fontSize: 13, fontWeight: 600 }}>
+                  <span className="text-[#E8A830]" style={{ fontSize: 14, fontWeight: 600 }}>
                     기획 시간 70분 절감
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mb-4">
                   <Navigation size={14} className="text-[#F0C070]" />
-                  <span className="text-[#2C2C2A]" style={{ fontSize: 13, fontWeight: 600 }}>
+                  <span className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 600 }}>
                     최적 경로: 한옥마을 → 경기전 → 남부시장
                   </span>
                 </div>
@@ -157,7 +157,7 @@ export function SnapRoute() {
                   {["한옥마을", "경기전", "남부시장"].map((place, i) => (
                     <div key={place} className="flex items-center gap-1">
                       <div className="px-3 py-1.5 rounded-lg bg-[#FFF8E7]">
-                        <span className="text-[#2C2C2A]" style={{ fontSize: 12, fontWeight: 500 }}>
+                        <span className="text-[#2C2C2A]" style={{ fontSize: 14, fontWeight: 500 }}>
                           {place}
                         </span>
                       </div>

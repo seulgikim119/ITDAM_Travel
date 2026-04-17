@@ -1,6 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-size-min: 14px;
   --font-size: 16px;
   --background: #FFF8E7;
   --foreground: #2C2C2A;
@@ -79,6 +80,20 @@
 }
 
 @theme inline {
+  /* Typography scale (minimum size: 14px) */
+  --text-xs: 0.875rem;
+  --text-xs--line-height: calc(1.25 / 0.875);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.375 / 0.9375);
+  --text-base: 1rem;
+  --text-base--line-height: calc(1.5 / 1);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: calc(1.625 / 1.125);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: calc(1.75 / 1.25);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: calc(2 / 1.5);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

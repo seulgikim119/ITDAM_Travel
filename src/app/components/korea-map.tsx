@@ -35,10 +35,10 @@ export function KoreaMap({ className = "" }: { className?: string }) {
         <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" begin="0.3s" repeatCount="indefinite" />
       </circle>
       {/* City labels */}
-      <text x="100" y="48" fill="rgba(240,192,112,0.5)" style={{ fontSize: 7, fontWeight: 500 }} textAnchor="middle">서울</text>
-      <text x="75" cy="110" y="106" fill="rgba(232,168,48,0.5)" style={{ fontSize: 7, fontWeight: 500 }} textAnchor="middle">전주</text>
-      <text x="132" y="168" fill="rgba(232,168,48,0.5)" style={{ fontSize: 7, fontWeight: 500 }} textAnchor="middle">경주</text>
-      <text x="90" y="215" fill="rgba(240,192,112,0.5)" style={{ fontSize: 7, fontWeight: 500 }} textAnchor="middle">부산</text>
+      <text x="100" y="48" fill="rgba(240,192,112,0.5)" style={{ fontSize: 14, fontWeight: 500 }} textAnchor="middle">서울</text>
+      <text x="75" cy="110" y="106" fill="rgba(232,168,48,0.5)" style={{ fontSize: 14, fontWeight: 500 }} textAnchor="middle">전주</text>
+      <text x="132" y="168" fill="rgba(232,168,48,0.5)" style={{ fontSize: 14, fontWeight: 500 }} textAnchor="middle">경주</text>
+      <text x="90" y="215" fill="rgba(240,192,112,0.5)" style={{ fontSize: 14, fontWeight: 500 }} textAnchor="middle">부산</text>
       <defs>
         <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#F0C070" />
