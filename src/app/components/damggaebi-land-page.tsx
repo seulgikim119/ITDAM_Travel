@@ -147,6 +147,13 @@ function stableSeed(value: string) {
 }
 
 function resolvePlanStopNames(plan: CompletedPlan, clonedRoutines: Routine[]) {
+  const fromPlan = (plan.plannedStops ?? [])
+    .map((stop) => stop.name?.trim())
+    .filter((name): name is string => Boolean(name));
+  if (fromPlan.length > 0) {
+    return fromPlan;
+  }
+
   const fromCloned = clonedRoutines.find((routine) => routine.id === plan.sourceRoutineId);
   const baseNames = fromCloned?.stops.map((stop) => stop.name) ?? [];
   const requiredCount = Math.max(plan.totalStops, 2);

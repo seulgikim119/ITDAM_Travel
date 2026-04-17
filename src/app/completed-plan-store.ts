@@ -1,5 +1,13 @@
 const STORAGE_KEY = "itdam_completed_plans_v1";
 
+export type CompletedPlanStop = {
+  id: string;
+  name: string;
+  duration: number;
+  memo: string;
+  kind: "base" | "suggested";
+};
+
 export type CompletedPlan = {
   id: string;
   sourceRoutineId: string | null;
@@ -8,6 +16,7 @@ export type CompletedPlan = {
   travelDate?: string;
   totalStops: number;
   totalMinutes: number;
+  plannedStops?: CompletedPlanStop[];
   finalizedAt: string;
 };
 
@@ -50,6 +59,7 @@ export function saveCompletedPlan(input: SaveCompletedPlanInput): CompletedPlan[
     travelDate: input.travelDate,
     totalStops: input.totalStops,
     totalMinutes: input.totalMinutes,
+    plannedStops: input.plannedStops,
   };
 
   const current = readStorage();

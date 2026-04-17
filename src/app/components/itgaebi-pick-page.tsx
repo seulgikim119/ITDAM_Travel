@@ -603,6 +603,13 @@ export function SavedPlaces() {
       travelDate,
       totalStops: draftStops.length,
       totalMinutes: estimatedTotalMinutes,
+      plannedStops: draftStops.map((stop) => ({
+        id: stop.id,
+        name: stop.name,
+        duration: stop.duration,
+        memo: stop.memo,
+        kind: stop.kind,
+      })),
     });
     navigate("/app/record");
   };

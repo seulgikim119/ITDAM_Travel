@@ -1,10 +1,52 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
+
+function detectMobileClient() {
+  if (typeof window === "undefined") return false;
+  const ua = window.navigator.userAgent || "";
+  const mobileUa = /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(ua);
+  const smallViewport = window.matchMedia("(max-width: 767px)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  return mobileUa || (smallViewport && coarsePointer);
+}
+
+function formatStatusTime(date: Date) {
+  const hour = date.getHours();
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${hour}:${minute}`;
+}
 
 export function StatusBar({ light = false }: { light?: boolean }) {
+  const [isMobileClient, setIsMobileClient] = useState<boolean>(() => detectMobileClient());
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const update = () => setIsMobileClient(detectMobileClient());
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  if (isMobileClient) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          minHeight: "calc(env(safe-area-inset-top) + 8px)",
+          paddingTop: "env(safe-area-inset-top)",
+        }}
+      />
+    );
+  }
+
   const color = light ? "text-white" : "text-[#2C2C2A]";
   return (
     <div className={`flex justify-between items-center px-8 pt-[14px] pb-[6px] ${color}`} style={{ minHeight: 54 }}>
-      <span className="text-[14px] tracking-tight" style={{ fontWeight: 600 }}>9:41</span>
+      <span className="text-[14px] tracking-tight" style={{ fontWeight: 600 }}>{formatStatusTime(now)}</span>
       <div className="absolute left-1/2 -translate-x-1/2 top-[12px] w-[126px] h-[34px] bg-black rounded-full" />
       <div className="flex items-center gap-1.5">
         <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="3" width="3" height="9" rx="1" opacity="0.3"/><rect x="4.5" y="2" width="3" height="10" rx="1" opacity="0.5"/><rect x="9" y="1" width="3" height="11" rx="1" opacity="0.7"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
