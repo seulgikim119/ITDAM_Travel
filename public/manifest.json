@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#ffffff",
-    "description": "설명설명",
+    "description": "잇깨비의 지능형 추천으로 최적의 동선을 설계하고, 당신의 발걸음을 가치 있는 자산으로 기록해 보세요. 지금 당신만의 여정 지도를 그려볼까요?",
     "icons": [
         {
             "src": "/icon-192.png",

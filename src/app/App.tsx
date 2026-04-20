@@ -8,7 +8,7 @@ export default function App() {
 
   return (
     <div
-      className="relative flex justify-center min-h-[100dvh] overflow-hidden md:items-center"
+      className="relative flex justify-center items-center min-h-screen overflow-hidden"
       style={{
         fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif",
         backgroundColor: "#11182B",
@@ -19,7 +19,7 @@ export default function App() {
         className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
           width: "min(100vw, 1920px)",
-          height: "min(100dvh, 1080px)",
+          height: "min(100vh, 1080px)",
           backgroundImage: `url(${webBgImage})`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center center",
@@ -27,11 +27,11 @@ export default function App() {
         }}
       />
 
-      <div className="relative z-10 w-full h-[100dvh] md:w-auto md:h-auto">
+      <div className="relative z-10">
         <div
           ref={webSwipeScroll.ref}
           {...webSwipeScroll.handlers}
-          className="w-full h-[100dvh] bg-white relative overflow-hidden md:w-[92vw] md:max-w-[390px] md:h-[94dvh] md:max-h-[844px] md:rounded-[40px] md:shadow-2xl"
+          className="w-full h-[100dvh] bg-white relative overflow-hidden md:w-[390px] md:max-h-[844px] md:rounded-[40px] md:shadow-2xl"
         >
           <RouterProvider router={router} />
         </div>
