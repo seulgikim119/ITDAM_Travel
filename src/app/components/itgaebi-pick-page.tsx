@@ -962,7 +962,7 @@ export function SavedPlaces() {
 
           <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: Y.line, background: "#FAFAFB" }}>
             <p style={{ fontSize: 14, fontWeight: 800, color: Y.text }}>여행 일정 지정</p>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2 mt-2">
               <input
                 type="date"
                 value={travelDate}
@@ -973,7 +973,7 @@ export function SavedPlaces() {
                     setTravelEndDate(nextStart);
                   }
                 }}
-                className="w-full h-10 px-3 rounded-xl border outline-none"
+                className="w-full min-w-0 h-10 px-3 rounded-xl border outline-none"
                 style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
               />
               <input
@@ -986,7 +986,7 @@ export function SavedPlaces() {
                     setTravelDate(nextEnd);
                   }
                 }}
-                className="w-full h-10 px-3 rounded-xl border outline-none"
+                className="w-full min-w-0 h-10 px-3 rounded-xl border outline-none"
                 style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
               />
             </div>
@@ -1126,19 +1126,19 @@ export function SavedPlaces() {
                 className="h-9 px-3 rounded-xl border outline-none"
                 style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
               />
-              <div className="grid grid-cols-[1fr_auto] gap-2">
+              <div className="grid grid-cols-1 min-[360px]:grid-cols-[1fr_auto] gap-2">
                 <input
                   type="text"
                   value={lodgingMemoInput}
                   onChange={(event) => setLodgingMemoInput(event.target.value)}
                   placeholder="체크인 메모"
-                  className="h-9 px-3 rounded-xl border outline-none"
+                  className="h-9 w-full min-w-0 px-3 rounded-xl border outline-none"
                   style={{ borderColor: Y.line, fontSize: 14, color: Y.text, background: "#FFFFFF" }}
                 />
                 <button
                   type="button"
                   onClick={handleAddLodgingStop}
-                  className="h-9 px-3 rounded-xl border"
+                  className="h-9 w-full min-[360px]:w-auto min-[360px]:shrink-0 whitespace-nowrap px-3 rounded-xl border"
                   style={{ borderColor: "#9EB7E8", background: "#EAF2FF", color: "#315A9B", fontSize: 13, fontWeight: 800 }}
                 >
                   숙소 추가

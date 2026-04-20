@@ -243,3 +243,28 @@
   - Position ticket in `itgaebi-pick-page.tsx` using `calc(var(--app-tabbar-height) + 10px)`
   - Recalculate ticket max height using measured tabbar height and react to tabbar resize events
   - Rebuild and verify
+
+### 2026-04-20 Request 25
+
+- Request: check/fix lodging add button breaking when screen width gets smaller
+- Plan:
+  - Update the lodging memo/button row in `itgaebi-pick-page.tsx` to responsive grid behavior
+  - Use single-column layout on narrow widths and `1fr + auto` on wider widths
+  - Add `min-w-0` to input and `whitespace-nowrap`/`shrink-0` behavior to button to prevent squeeze distortion
+  - Rebuild and verify
+
+### 2026-04-20 Request 26
+
+- Request: check/fix "여행 일정 지정" section breaking on small screens
+- Plan:
+  - Change date input row in `itgaebi-pick-page.tsx` from fixed 2-column layout to responsive layout
+  - Use single-column under narrow widths and 2-column from `360px` and up
+  - Add `min-w-0` to date inputs to avoid intrinsic width overflow on iOS
+  - Rebuild and verify
+
+### 2026-04-20 Request 27
+
+- Request: change app icon transparent background to white
+- Plan:
+  - Re-export `public/icon-192.png` and `public/icon-512.png` with solid white background composited behind the original icon
+  - Keep manifest/icon paths unchanged so installed icon updates without route changes
