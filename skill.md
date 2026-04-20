@@ -178,3 +178,40 @@
   - Change desktop frame height from fixed value to `100dvh` with `max-height: 844px`
   - Preserve iPhone 12 Pro width target (`390px`) while preventing viewport overflow
   - Rebuild and verify
+
+### 2026-04-20 Request 18
+
+- Request: support swipe-like navigation on web (desktop) in addition to wheel scrolling
+- Plan:
+  - Add a shared web swipe-scroll hook using pointer events (mouse drag)
+  - Attach the hook to the app frame container in `App.tsx` so tab pages inherit behavior
+  - Apply vertical-direction lock and click-suppression only when drag threshold is exceeded
+  - Keep form input controls excluded from drag handling
+  - Rebuild and verify
+
+### 2026-04-20 Request 19
+
+- Request: diagnose why iPhone access via Vercel does not fit viewport correctly
+- Diagnosis Plan:
+  - Check mobile viewport meta and safe-area compatibility in `index.html`
+  - Audit root layout in `App.tsx` for mixed `vh/dvh` and center alignment side effects on iOS Safari
+  - Identify fixed-height overlays capped at `844px` that may conflict with dynamic viewport height
+
+### 2026-04-20 Request 20
+
+- Request: apply iPhone viewport-fit stabilization fixes now
+- Plan:
+  - Add `viewport-fit=cover` and `100dvh` root baseline in `index.html`
+  - Update `App.tsx` root wrapper to mobile-first `dvh` sizing and avoid mobile vertical centering drift
+  - Change background layer height from `100vh` to `100dvh`
+  - Remove mobile `max-h: 844px` cap from Damggaebi Land overlays (keep desktop cap only)
+  - Rebuild and verify
+
+### 2026-04-20 Request 21
+
+- Request: migrate overall sizing to responsive `%` / `vh`-centric behavior
+- Plan:
+  - Convert app frame desktop sizing in `App.tsx` from fixed width to `vw` + max-width guard
+  - Convert Damggaebi Land popup shells to `vw/dvh` sizing with desktop max caps
+  - Replace fixed-height-dependent ticket offset logic in `itgaebi-pick-page.tsx` with viewport-ratio-based formula
+  - Rebuild and verify

@@ -992,7 +992,7 @@ export function TravelSketchbook() {
 
       {successFlowPlan && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+          <div className="relative w-full md:w-[92vw] md:max-w-[390px] h-[100dvh] md:h-[94dvh] md:max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 px-6 flex items-center justify-center">
               <div className="w-full max-w-[340px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
@@ -1034,7 +1034,7 @@ export function TravelSketchbook() {
 
       {activeMapBridgePack && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+          <div className="relative w-full md:w-[92vw] md:max-w-[390px] h-[100dvh] md:h-[94dvh] md:max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 px-6 flex items-center justify-center">
               <div className="w-full max-w-[348px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
@@ -1118,7 +1118,7 @@ export function TravelSketchbook() {
 
       {activeTicketPlan && activeTicketPack && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+          <div className="relative w-full md:w-[92vw] md:max-w-[390px] h-[100dvh] md:h-[94dvh] md:max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" onClick={() => setTicketPlanId(null)} />
             <div
               className="absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-6"
@@ -1193,7 +1193,7 @@ export function TravelSketchbook() {
 
       {activeJourneyRecord && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+          <div className="relative w-full md:w-[92vw] md:max-w-[390px] h-[100dvh] md:h-[94dvh] md:max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" onClick={() => setRecordDetailId(null)} />
             <div
               className="absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-6"
@@ -1266,7 +1266,7 @@ export function TravelSketchbook() {
 
       {popupText && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3 pointer-events-none">
-          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+          <div className="relative w-full md:w-[92vw] md:max-w-[390px] h-[100dvh] md:h-[94dvh] md:max-h-[844px]">
             <div className="absolute left-1/2 -translate-x-1/2 bottom-[96px]">
               <div
                 className="px-4 py-2 rounded-xl shadow-lg"

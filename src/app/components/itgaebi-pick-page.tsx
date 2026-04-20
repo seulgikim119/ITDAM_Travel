@@ -858,13 +858,12 @@ export function SavedPlaces() {
     navigate("/app/record");
   };
 
-  const ticketBottomOffset =
-    "max(calc(74px + env(safe-area-inset-bottom)), calc((100dvh - 844px) / 2 + 90px))";
+  const ticketBottomOffset = "max(calc(74px + env(safe-area-inset-bottom)), calc(7dvh + 20px))";
 
   useEffect(() => {
     const update = () => {
       const h = window.innerHeight;
-      const bottomOffset = Math.max(74, (h - 844) / 2 + 74);
+      const bottomOffset = Math.max(74, h * 0.07 + 20);
       setTicketMaxHeight(Math.round((h - bottomOffset) * 0.7));
     };
     update();
