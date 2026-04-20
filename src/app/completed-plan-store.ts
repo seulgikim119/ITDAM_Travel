@@ -1,3 +1,5 @@
+import { createStore } from "zustand/vanilla";
+
 const STORAGE_KEY = "itdam_completed_plans_v1";
 
 export type CompletedPlanStop = {
@@ -5,7 +7,7 @@ export type CompletedPlanStop = {
   name: string;
   duration: number;
   memo: string;
-  kind: "base" | "suggested";
+  kind: "base" | "suggested" | "lodging";
 };
 
 export type CompletedPlan = {
@@ -14,6 +16,10 @@ export type CompletedPlan = {
   title: string;
   region: string;
   travelDate?: string;
+  travelStartDate?: string;
+  travelEndDate?: string;
+  tripNights?: number;
+  tripDays?: number;
   totalStops: number;
   totalMinutes: number;
   plannedStops?: CompletedPlanStop[];
@@ -23,6 +29,12 @@ export type CompletedPlan = {
 type SaveCompletedPlanInput = Omit<CompletedPlan, "id" | "finalizedAt"> & {
   id?: string;
   finalizedAt?: string;
+};
+
+type CompletedPlanStoreState = {
+  plans: CompletedPlan[];
+  setPlans: (plans: CompletedPlan[]) => void;
+  hydrateFromStorage: () => void;
 };
 
 function readStorage(): CompletedPlan[] {
@@ -45,8 +57,19 @@ function writeStorage(plans: CompletedPlan[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
 }
 
+const completedPlanStore = createStore<CompletedPlanStoreState>()((set) => ({
+  plans: readStorage(),
+  setPlans: (plans) => {
+    writeStorage(plans);
+    set({ plans });
+  },
+  hydrateFromStorage: () => {
+    set({ plans: readStorage() });
+  },
+}));
+
 export function getCompletedPlans(): CompletedPlan[] {
-  return readStorage();
+  return completedPlanStore.getState().plans;
 }
 
 export function saveCompletedPlan(input: SaveCompletedPlanInput): CompletedPlan[] {
@@ -57,20 +80,23 @@ export function saveCompletedPlan(input: SaveCompletedPlanInput): CompletedPlan[
     title: input.title,
     region: input.region,
     travelDate: input.travelDate,
+    travelStartDate: input.travelStartDate,
+    travelEndDate: input.travelEndDate,
+    tripNights: input.tripNights,
+    tripDays: input.tripDays,
     totalStops: input.totalStops,
     totalMinutes: input.totalMinutes,
     plannedStops: input.plannedStops,
   };
 
-  const current = readStorage();
+  const current = completedPlanStore.getState().plans;
   const next = [plan, ...current].slice(0, 30);
-  writeStorage(next);
+  completedPlanStore.getState().setPlans(next);
   return next;
 }
 
 export function removeCompletedPlan(planId: string): CompletedPlan[] {
-  const current = readStorage();
-  const next = current.filter((plan) => plan.id !== planId);
-  writeStorage(next);
+  const next = completedPlanStore.getState().plans.filter((plan) => plan.id !== planId);
+  completedPlanStore.getState().setPlans(next);
   return next;
 }

@@ -95,6 +95,7 @@ export function MyPage() {
   const [auth, setAuth] = useState<AuthState>(() => getAuthState());
   const [assetProofCount, setAssetProofCount] = useState(0);
   const [isAssetExportOpen, setIsAssetExportOpen] = useState(false);
+  const [isTreasureDetailOpen, setIsTreasureDetailOpen] = useState(false);
   const [openAssetSections, setOpenAssetSections] = useState<Record<TreasureType, boolean>>({
     coupon: false,
     point: false,
@@ -129,7 +130,7 @@ export function MyPage() {
 
   const stats = auth.isLoggedIn
     ? [
-      { num: "3", label: "완료한 여행 기록", color: "#000" },
+      { num: "3", label: "완료한 기록", color: "#000" },
       { num: "1", label: "완료한 루트", color: "#000" },
       { num: "4", label: "저장한 장소", color: "#000" },
     ]
@@ -205,9 +206,9 @@ export function MyPage() {
                 <button
                   onClick={() => logout()}
                   className="h-9 px-3 rounded-xl border border-[#D6EEDC] text-[#3F6E4D] flex items-center gap-1.5"
-                  style={{ fontSize: 14, fontWeight: 500 }}
+                  style={{ fontSize: 14, fontWeight: 400 }}
                 >
-                  <LogOut size={10} />
+                  <LogOut size={8} />
                   로그아웃
                 </button>
               </div>
@@ -227,7 +228,7 @@ export function MyPage() {
                     background: "linear-gradient(135deg, #57D476, #34C759)",
                   }}
                 >
-                  <LogIn size={14} />
+                  <LogIn size={10} />
                   로그인
                 </button>
               </div>
@@ -240,7 +241,7 @@ export function MyPage() {
         <div className="grid grid-cols-3 gap-2">
           {stats.map((s) => (
             <div key={s.label} className="bg-white rounded-2xl p-4 text-center shadow-sm">
-              <p style={{ fontSize: 22, fontWeight: 700, color: auth.isLoggedIn ? s.color : "#C7C7CC" }}>{s.num}</p>
+              <p style={{ fontSize: 18, fontWeight: 500, color: auth.isLoggedIn ? s.color : "#C7C7CC" }}>{s.num}</p>
               <p className="text-[#8E8E93] mt-0.5" style={{ fontSize: 14 }}>
                 {s.label}
               </p>
@@ -270,165 +271,187 @@ export function MyPage() {
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
                   <p style={{ fontSize: 13, color: "#6B7785" }}>사용 가능 쿠폰</p>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: "#1E2B22" }} className="mt-0.5">
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#1E2B22" }} className="mt-0.5">
                     {couponAssets.length}장
                   </p>
                 </div>
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
                   <p style={{ fontSize: 14, color: "#6B7785" }}>만료 임박</p>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: "#1E2B22" }} className="mt-0.5">
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#1E2B22" }} className="mt-0.5">
                     {expiringCoupons.length}건
                   </p>
                 </div>
                 <div className="rounded-xl p-3 bg-[#F7FBF8]">
                   <p style={{ fontSize: 14, color: "#6B7785" }}>총 경제 이득</p>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: "#1FA84A" }} className="mt-0.5">
+                  <p style={{ fontSize: 16, fontWeight: 700, color: "#1FA84A" }} className="mt-0.5">
                     {formatWon(totalEconomicBenefit)}
                   </p>
                 </div>
               </div>
 
-              {expiringCoupons.length > 0 && (
-                <div className="mt-3 rounded-xl border border-[#D8EFDE] bg-[#F2FBF5] p-3">
-                  <div className="flex items-center gap-1.5">
-                    <CalendarClock size={14} className="text-[#1FA84A]" />
-                    <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A" }}>
-                      유효기간 임박 쿠폰 알림
+              <div className="mt-3 rounded-xl border border-[#DCEDE2] bg-[#F8FCF9]">
+                <button
+                  onClick={() => setIsTreasureDetailOpen((prev) => !prev)}
+                  className="w-full px-3 py-3 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0 text-left">
+                    <p style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}>보물 상세 보기</p>
+                    <p className="mt-0.5 text-[#6B7785]" style={{ fontSize: 13 }}>
+                      클릭해서 담아온 보물 내역을 확인해요
                     </p>
                   </div>
-                  <div className="mt-1.5 space-y-1">
-                    {expiringCoupons.map((coupon) => (
-                      <p key={coupon.id} style={{ fontSize: 14, color: "#2F3A33" }}>
-                        {coupon.title} · {coupon.dDay === 0 ? "오늘 만료" : `${coupon.dDay}일 남음`}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  <ChevronRight
+                    size={16}
+                    className={`text-[#8AA294] transition-transform ${isTreasureDetailOpen ? "rotate-90" : ""}`}
+                  />
+                </button>
 
-              <div className="space-y-2 mt-3">
-                {[
-                  {
-                    key: "coupon" as TreasureType,
-                    title: "쿠폰 보관함",
-                    hint: "클릭해서 사용 가능한 쿠폰을 확인해요",
-                    emptyText: "사용 가능한 쿠폰이 없어요.",
-                    unit: "장",
-                    assets: couponAssets,
-                  },
-                  {
-                    key: "point" as TreasureType,
-                    title: "포인트 보관함",
-                    hint: "클릭해서 적립한 포인트를 확인해요",
-                    emptyText: "적립된 포인트가 없어요.",
-                    unit: "개",
-                    assets: pointAssets,
-                  },
-                  {
-                    key: "item" as TreasureType,
-                    title: "수집템 보관함",
-                    hint: "클릭해서 모은 수집템을 확인해요",
-                    emptyText: "수집한 아이템이 없어요.",
-                    unit: "개",
-                    assets: itemAssets,
-                  },
-                ].map((section) => {
-                  const isOpen = openAssetSections[section.key];
-                  const badge = typeBadge(section.key);
-                  return (
-                    <div key={section.key} className="rounded-xl border border-[#DCEDE2] bg-[#F8FCF9]">
-                      <button
-                        onClick={() =>
-                          setOpenAssetSections((prev) => ({
-                            ...prev,
-                            [section.key]: !prev[section.key],
-                          }))
-                        }
-                        className="w-full px-3 py-3 flex items-center justify-between gap-3"
-                      >
-                        <div className="min-w-0 text-left">
-                          <p style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}>{section.title}</p>
-                          <p className="mt-0.5 text-[#6B7785]" style={{ fontSize: 13 }}>
-                            {section.hint}
+                {isTreasureDetailOpen && (
+                  <div className="px-3 pb-3">
+                    {expiringCoupons.length > 0 && (
+                      <div className="rounded-xl border border-[#D8EFDE] bg-[#F2FBF5] p-3">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarClock size={14} className="text-[#1FA84A]" />
+                          <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A" }}>
+                            유효기간 임박 쿠폰 알림
                           </p>
                         </div>
-                        <div className="inline-flex items-center gap-2">
-                          <span
-                            className="h-6 px-2 rounded-full inline-flex items-center"
-                            style={{ background: badge.bg, color: badge.text, fontSize: 13, fontWeight: 800 }}
-                          >
-                            {section.assets.length}
-                            {section.unit}
-                          </span>
-                          <ChevronRight
-                            size={16}
-                            className={`text-[#8AA294] transition-transform ${isOpen ? "rotate-90" : ""}`}
-                          />
-                        </div>
-                      </button>
-
-                      {isOpen && (
-                        <div className="px-3 pb-3 space-y-2">
-                          {section.assets.length > 0 ? (
-                            section.assets.map((asset) => {
-                              const rowBadge = typeBadge(asset.type);
-                              const RowIcon = rowBadge.icon;
-                              const daysLeft = asset.expiresAt ? diffDaysFromToday(asset.expiresAt) : null;
-                              return (
-                                <article
-                                  key={asset.id}
-                                  className="rounded-xl border border-[#EAF4ED] bg-white p-3 flex items-center justify-between gap-3"
-                                >
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span
-                                        className="h-6 px-2 rounded-full inline-flex items-center gap-1"
-                                        style={{
-                                          background: rowBadge.bg,
-                                          color: rowBadge.text,
-                                          fontSize: 14,
-                                          fontWeight: 800,
-                                        }}
-                                      >
-                                        <RowIcon size={11} />
-                                        {rowBadge.label}
-                                      </span>
-                                      <p
-                                        className="truncate"
-                                        style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}
-                                      >
-                                        {asset.title}
-                                      </p>
-                                    </div>
-                                    <p className="mt-0.5" style={{ fontSize: 13, color: "#6B7785" }}>
-                                      {asset.desc}
-                                    </p>
-                                    {daysLeft !== null && (
-                                      <p className="mt-1" style={{ fontSize: 13, color: "#1FA84A", fontWeight: 700 }}>
-                                        {daysLeft < 0
-                                          ? "사용 기한이 지난 쿠폰"
-                                          : daysLeft === 0
-                                            ? "오늘 만료"
-                                            : `${daysLeft}일 남음`}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A", whiteSpace: "nowrap" }}>
-                                    +{formatWon(asset.valueWon)}
-                                  </p>
-                                </article>
-                              );
-                            })
-                          ) : (
-                            <p className="rounded-lg bg-white px-3 py-2.5" style={{ fontSize: 14, color: "#6B7785" }}>
-                              {section.emptyText}
+                        <div className="mt-1.5 space-y-1">
+                          {expiringCoupons.map((coupon) => (
+                            <p key={coupon.id} style={{ fontSize: 14, color: "#2F3A33" }}>
+                              {coupon.title} · {coupon.dDay === 0 ? "오늘 만료" : `${coupon.dDay}일 남음`}
                             </p>
-                          )}
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
+
+                    <div className="space-y-2 mt-2">
+                      {[
+                        {
+                          key: "coupon" as TreasureType,
+                          title: "쿠폰 보관함",
+                          hint: "클릭해서 사용 가능한 쿠폰을 확인해요",
+                          emptyText: "사용 가능한 쿠폰이 없어요.",
+                          unit: "장",
+                          assets: couponAssets,
+                        },
+                        {
+                          key: "point" as TreasureType,
+                          title: "포인트 보관함",
+                          hint: "클릭해서 적립한 포인트를 확인해요",
+                          emptyText: "적립된 포인트가 없어요.",
+                          unit: "개",
+                          assets: pointAssets,
+                        },
+                        {
+                          key: "item" as TreasureType,
+                          title: "수집템 보관함",
+                          hint: "클릭해서 모은 수집템을 확인해요",
+                          emptyText: "수집한 아이템이 없어요.",
+                          unit: "개",
+                          assets: itemAssets,
+                        },
+                      ].map((section) => {
+                        const isOpen = openAssetSections[section.key];
+                        const badge = typeBadge(section.key);
+                        return (
+                          <div key={section.key} className="rounded-xl border border-[#DCEDE2] bg-[#F8FCF9]">
+                            <button
+                              onClick={() =>
+                                setOpenAssetSections((prev) => ({
+                                  ...prev,
+                                  [section.key]: !prev[section.key],
+                                }))
+                              }
+                              className="w-full px-3 py-3 flex items-center justify-between gap-3"
+                            >
+                              <div className="min-w-0 text-left">
+                                <p style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}>{section.title}</p>
+                                <p className="mt-0.5 text-[#6B7785]" style={{ fontSize: 13 }}>
+                                  {section.hint}
+                                </p>
+                              </div>
+                              <div className="inline-flex items-center gap-2">
+                                <span
+                                  className="h-6 px-2 rounded-full inline-flex items-center"
+                                  style={{ background: badge.bg, color: badge.text, fontSize: 13, fontWeight: 800 }}
+                                >
+                                  {section.assets.length}
+                                  {section.unit}
+                                </span>
+                                <ChevronRight
+                                  size={16}
+                                  className={`text-[#8AA294] transition-transform ${isOpen ? "rotate-90" : ""}`}
+                                />
+                              </div>
+                            </button>
+
+                            {isOpen && (
+                              <div className="px-3 pb-3 space-y-2">
+                                {section.assets.length > 0 ? (
+                                  section.assets.map((asset) => {
+                                    const rowBadge = typeBadge(asset.type);
+                                    const RowIcon = rowBadge.icon;
+                                    const daysLeft = asset.expiresAt ? diffDaysFromToday(asset.expiresAt) : null;
+                                    return (
+                                      <article
+                                        key={asset.id}
+                                        className="rounded-xl border border-[#EAF4ED] bg-white p-3 flex items-center justify-between gap-3"
+                                      >
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span
+                                              className="h-6 px-2 rounded-full inline-flex items-center gap-1"
+                                              style={{
+                                                background: rowBadge.bg,
+                                                color: rowBadge.text,
+                                                fontSize: 14,
+                                                fontWeight: 800,
+                                              }}
+                                            >
+                                              <RowIcon size={11} />
+                                              {rowBadge.label}
+                                            </span>
+                                            <p
+                                              className="truncate"
+                                              style={{ fontSize: 14, fontWeight: 800, color: "#1E2B22" }}
+                                            >
+                                              {asset.title}
+                                            </p>
+                                          </div>
+                                          <p className="mt-0.5" style={{ fontSize: 13, color: "#6B7785" }}>
+                                            {asset.desc}
+                                          </p>
+                                          {daysLeft !== null && (
+                                            <p className="mt-1" style={{ fontSize: 13, color: "#1FA84A", fontWeight: 700 }}>
+                                              {daysLeft < 0
+                                                ? "사용 기한이 지난 쿠폰"
+                                                : daysLeft === 0
+                                                  ? "오늘 만료"
+                                                  : `${daysLeft}일 남음`}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <p style={{ fontSize: 14, fontWeight: 800, color: "#1FA84A", whiteSpace: "nowrap" }}>
+                                          +{formatWon(asset.valueWon)}
+                                        </p>
+                                      </article>
+                                    );
+                                  })
+                                ) : (
+                                  <p className="rounded-lg bg-white px-3 py-2.5" style={{ fontSize: 14, color: "#6B7785" }}>
+                                    {section.emptyText}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
               </div>
             </>
           ) : (

@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, BookmarkPlus, Clock3, Coins, MapPinned } from "lucide-react";
 import { StatusBar } from "./phone-frame";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { cloneRoutine, isRoutineCloned } from "../clone-store";
 import { getRoutineById } from "../content-data";
+import { addRecentViewedDestination } from "../recent-viewed-store";
 
 export function RoutineDetail() {
   const navigate = useNavigate();
@@ -17,9 +18,19 @@ export function RoutineDetail() {
     routineId ? isRoutineCloned(routineId) : false
   );
 
+  useEffect(() => {
+    if (!routine) return;
+    addRecentViewedDestination({
+      id: routine.id,
+      title: routine.title,
+      region: routine.region,
+      image: routine.image,
+    });
+  }, [routine]);
+
   if (!routine) {
     return (
-      <div className="h-full flex flex-col bg-[#F5F6FA]">
+      <div className="h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
         <StatusBar />
         <div className="px-5 py-4">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-[#4E5968]">
@@ -43,7 +54,7 @@ export function RoutineDetail() {
   };
 
   return (
-    <div className="min-h-full bg-[#F5F6FA] pb-5">
+    <div className="h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
       <div className="bg-white border-b border-[#EEF0F4]">
         <StatusBar />
         <div className="px-4 py-2 flex items-center justify-between">
@@ -57,7 +68,7 @@ export function RoutineDetail() {
         </div>
       </div>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-5 space-y-4">
         <section className="bg-white rounded-3xl overflow-hidden shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
           <div className="h-[200px] relative">
             <ImageWithFallback src={routine.image} alt={routine.title} className="w-full h-full object-cover" />
@@ -68,7 +79,7 @@ export function RoutineDetail() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-3">
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl bg-[#F8FAFC] p-3">
                 <div className="flex items-center gap-1 text-[#8B95A1] mb-1" style={{ fontSize: 14, fontWeight: 700 }}>
@@ -99,10 +110,10 @@ export function RoutineDetail() {
           <h2 className="text-[#191F28] mb-3" style={{ fontSize: 17, fontWeight: 800 }}>
             전체 경로
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {routine.stops.map((stop, index) => (
-              <div key={stop.name} className="rounded-2xl border border-[#EEF0F4] p-3">
-                <p className="text-[#3182F6]" style={{ fontSize: 14, fontWeight: 800 }}>
+              <div key={stop.name} className="rounded-2xl border border-[#EEF0F4] p-2">
+                <p className="text-[#E8A830]" style={{ fontSize: 14, fontWeight: 800 }}>
                   STOP {index + 1}
                 </p>
                 <p className="text-[#191F28] mt-0.5" style={{ fontSize: 15, fontWeight: 700 }}>
@@ -118,7 +129,7 @@ export function RoutineDetail() {
           <button
             onClick={handleClone}
             className="w-full h-[52px] rounded-2xl text-white flex items-center justify-center gap-2"
-            style={{ fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #3182F6, #2F80ED)" }}
+            style={{ fontSize: 15, fontWeight: 800, background: "linear-gradient(135deg, #F0C070, #E8A830)" }}
           >
             <BookmarkPlus size={16} />
             {isCloned ? "이미 잇깨비픽에 담겼어요" : "클로닝하고 잇깨비픽에 담기"}

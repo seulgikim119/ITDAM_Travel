@@ -1,4 +1,5 @@
-import type { RoutineTheme } from "./content-data";
+import { createStore } from "zustand/vanilla";
+import { routineThemes, type RoutineTheme } from "./content-data";
 
 const STORAGE_KEY = "itdam_taste_profile_v1";
 
@@ -24,33 +25,48 @@ export type TasteProfile = {
   updatedAt: string;
 };
 
-type ThemeScoreMap = Record<RoutineTheme, number>;
-type ThemeWeight = Partial<ThemeScoreMap>;
-
-type TasteMeta = TasteOption & {
-  weight: ThemeWeight;
+type TasteStoreState = {
+  profile: TasteProfile | null;
+  setProfile: (profile: TasteProfile | null) => void;
+  hydrateFromStorage: () => void;
 };
 
-const allThemes: RoutineTheme[] = ["맛집", "사진", "자연", "카페", "야경", "역사"];
-
-const tasteMeta: TasteMeta[] = [
-  { id: "food", label: "맛집 탐방", emoji: "🍽️", weight: { 맛집: 3 } },
-  { id: "nature", label: "자연 풍경", emoji: "🌿", weight: { 자연: 3 } },
-  { id: "photo", label: "사진 스팟", emoji: "📸", weight: { 사진: 3 } },
-  { id: "cafe", label: "카페 투어", emoji: "☕", weight: { 카페: 3 } },
-  { id: "history", label: "역사/문화", emoji: "🏛️", weight: { 역사: 3 } },
-  { id: "ocean", label: "바다/해변", emoji: "🌊", weight: { 자연: 2, 사진: 1 } },
-  { id: "shopping", label: "쇼핑", emoji: "🛍️", weight: { 사진: 2, 카페: 1 } },
-  { id: "night", label: "야경/밤산책", emoji: "🌃", weight: { 야경: 3 } },
+const ALL_PREFERENCE_IDS: TastePreferenceId[] = [
+  "food",
+  "nature",
+  "photo",
+  "cafe",
+  "history",
+  "ocean",
+  "shopping",
+  "night",
 ];
 
-const tasteMap = new Map(tasteMeta.map((item) => [item.id, item]));
+const tasteOptionMap: Record<TastePreferenceId, TasteOption> = {
+  food: { id: "food", label: "맛집 탐방", emoji: "🍜" },
+  nature: { id: "nature", label: "자연 풍경", emoji: "🌿" },
+  photo: { id: "photo", label: "사진 스팟", emoji: "📸" },
+  cafe: { id: "cafe", label: "카페 투어", emoji: "☕" },
+  history: { id: "history", label: "역사/문화", emoji: "🏛️" },
+  ocean: { id: "ocean", label: "바다/해변", emoji: "🌊" },
+  shopping: { id: "shopping", label: "쇼핑", emoji: "🛍️" },
+  night: { id: "night", label: "야경/산책", emoji: "🌙" },
+};
 
-export const tasteOptions: TasteOption[] = tasteMeta.map(({ id, label, emoji }) => ({
-  id,
-  label,
-  emoji,
-}));
+const themeWeightByPreference: Record<TastePreferenceId, number[]> = {
+  food: [3, 0, 0, 0, 0, 0],
+  nature: [0, 0, 3, 0, 0, 0],
+  photo: [0, 3, 0, 0, 0, 0],
+  cafe: [0, 0, 0, 3, 0, 0],
+  history: [0, 0, 0, 0, 0, 3],
+  ocean: [0, 1, 2, 0, 0, 0],
+  shopping: [0, 2, 0, 1, 0, 0],
+  night: [0, 0, 0, 0, 3, 0],
+};
+
+function isValidPreferenceId(value: unknown): value is TastePreferenceId {
+  return typeof value === "string" && ALL_PREFERENCE_IDS.includes(value as TastePreferenceId);
+}
 
 function readStorage(): TasteProfile | null {
   if (typeof window === "undefined") return null;
@@ -59,60 +75,79 @@ function readStorage(): TasteProfile | null {
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as TasteProfile;
+    const parsed = JSON.parse(raw) as Partial<TasteProfile>;
     if (!Array.isArray(parsed.preferenceIds)) return null;
-    return parsed;
+    const preferenceIds = parsed.preferenceIds.filter(isValidPreferenceId);
+    const dominantTheme =
+      parsed.dominantTheme && routineThemes.includes(parsed.dominantTheme)
+        ? parsed.dominantTheme
+        : null;
+    return {
+      preferenceIds,
+      dominantTheme,
+      updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : new Date().toISOString(),
+    };
   } catch {
     return null;
   }
 }
 
-function writeStorage(profile: TasteProfile) {
+function writeStorage(profile: TasteProfile | null) {
   if (typeof window === "undefined") return;
+  if (!profile) {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
 }
 
 function deriveDominantTheme(preferenceIds: TastePreferenceId[]): RoutineTheme | null {
-  if (preferenceIds.length === 0) return null;
+  if (preferenceIds.length === 0 || routineThemes.length === 0) return null;
 
-  const score = allThemes.reduce<ThemeScoreMap>((acc, theme) => {
-    acc[theme] = 0;
-    return acc;
-  }, {} as ThemeScoreMap);
-
+  const score = new Array<number>(routineThemes.length).fill(0);
   preferenceIds.forEach((id) => {
-    const meta = tasteMap.get(id);
-    if (!meta) return;
-
-    Object.entries(meta.weight).forEach(([theme, value]) => {
-      if (!value) return;
-      score[theme as RoutineTheme] += value;
+    const weight = themeWeightByPreference[id];
+    weight.forEach((value, index) => {
+      if (index < score.length) score[index] += value;
     });
   });
 
-  return allThemes.reduce<RoutineTheme | null>((best, theme) => {
-    if (!best) return theme;
-    return score[theme] > score[best] ? theme : best;
-  }, null);
+  let bestIndex = 0;
+  for (let i = 1; i < score.length; i += 1) {
+    if (score[i] > score[bestIndex]) bestIndex = i;
+  }
+  return routineThemes[bestIndex] ?? null;
 }
 
+const tasteStore = createStore<TasteStoreState>()((set) => ({
+  profile: readStorage(),
+  setProfile: (profile) => {
+    writeStorage(profile);
+    set({ profile });
+  },
+  hydrateFromStorage: () => {
+    set({ profile: readStorage() });
+  },
+}));
+
+export const tasteOptions: TasteOption[] = ALL_PREFERENCE_IDS.map((id) => tasteOptionMap[id]);
+
 export function getUserTasteProfile(): TasteProfile | null {
-  return readStorage();
+  return tasteStore.getState().profile;
 }
 
 export function saveUserTasteProfile(preferenceIds: TastePreferenceId[]): TasteProfile {
-  const uniqueIds = [...new Set(preferenceIds)];
+  const uniqueIds = [...new Set(preferenceIds.filter(isValidPreferenceId))];
   const profile: TasteProfile = {
     preferenceIds: uniqueIds,
     dominantTheme: deriveDominantTheme(uniqueIds),
     updatedAt: new Date().toISOString(),
   };
-  writeStorage(profile);
+  tasteStore.getState().setProfile(profile);
   return profile;
 }
 
 export function clearUserTasteProfile() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
+  tasteStore.getState().setProfile(null);
 }
 

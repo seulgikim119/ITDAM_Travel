@@ -3,11 +3,13 @@ import { StatusBar } from "./phone-frame";
 import {
   BadgeCheck,
   BatteryLow,
+  ChevronRight,
   MapPinned,
   Navigation,
   PackageCheck,
   Radar,
   Route,
+  Share2,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import { getCompletedPlans, removeCompletedPlan, type CompletedPlan } from "../c
 import {
   journeyMineSpots,
   journeyRecords,
+  type JourneyRecord,
   provinceVisitSeed,
   type MineSpot,
   type ProvinceVisitSeed,
@@ -79,6 +82,12 @@ const OFFLINE_MOVE_TIPS = [
   "주차장은 목적지 150m 전부터 미리 확인하면 좋아요.",
   "도보 구간은 횡단보도 밀집 코스를 우선으로 잡아주세요.",
 ];
+
+const JOURNEY_RECORD_ROUTE_STOPS: Record<number, string[]> = {
+  1: ["광안리 해변", "민락수변공원", "해운대 블루라인파크"],
+  2: ["전주 한옥마을", "경기전", "남부시장 야시장"],
+  3: ["대릉원", "동궁과 월지", "첨성대"],
+};
 
 function readPocketSyncPackages(): PocketSyncPackageMap {
   if (typeof window === "undefined") return {};
@@ -208,7 +217,7 @@ function buildPocketSyncPackage(plan: CompletedPlan, clonedRoutines: Routine[]):
     planId: plan.id,
     title: plan.title,
     region: plan.region,
-    travelDate: plan.travelDate ?? plan.finalizedAt.slice(0, 10),
+    travelDate: plan.travelStartDate ?? plan.travelDate ?? plan.finalizedAt.slice(0, 10),
     savedAt: new Date().toISOString(),
     places,
     coupons,
@@ -254,6 +263,32 @@ function formatDateLabel(isoDate: string) {
   return parsed.toLocaleDateString("ko-KR");
 }
 
+function formatPlanDateRange(plan: CompletedPlan) {
+  const start = plan.travelStartDate ?? plan.travelDate ?? plan.finalizedAt;
+  const end = plan.travelEndDate ?? plan.travelDate ?? plan.finalizedAt;
+  const startLabel = formatDateLabel(start);
+  const endLabel = formatDateLabel(end);
+  if (startLabel === endLabel) return startLabel;
+  return `${startLabel} ~ ${endLabel}`;
+}
+
+function getJourneyRecordRouteStops(record: JourneyRecord) {
+  return JOURNEY_RECORD_ROUTE_STOPS[record.id] ?? [];
+}
+
+function summarizeJourneyRecordRoute(record: JourneyRecord) {
+  const stops = getJourneyRecordRouteStops(record);
+  if (stops.length > 0) {
+    return stops.join(" → ");
+  }
+
+  const highlights = record.tags.slice(0, 3);
+  if (highlights.length === 0) {
+    return `${record.region} 중심 동선`;
+  }
+  return `${record.region} · ${highlights.join(" · ")}`;
+}
+
 export function TravelSketchbook() {
   const G = {
     bg: "#F4F8F4",
@@ -276,6 +311,8 @@ export function TravelSketchbook() {
   const [successFlowPlanId, setSuccessFlowPlanId] = useState<string | null>(null);
   const [mapBridgePlanId, setMapBridgePlanId] = useState<string | null>(null);
   const [ticketPlanId, setTicketPlanId] = useState<string | null>(null);
+  const [recordDetailId, setRecordDetailId] = useState<number | null>(null);
+  const [openPlanAccordionId, setOpenPlanAccordionId] = useState<string | null>(null);
   const [powerSaverMode, setPowerSaverMode] = useState<boolean>(() => readPowerSaverMode());
   const [autoSyncedPlanIds, setAutoSyncedPlanIds] = useState<string[]>([]);
   const clonedRoutines = useMemo(() => getClonedRoutines(), [completedPlans.length]);
@@ -348,6 +385,14 @@ export function TravelSketchbook() {
   const activeMapBridgePack = mapBridgePlanId ? pocketSyncPackages[mapBridgePlanId] ?? null : null;
   const activeTicketPlan = ticketPlanId ? completedPlans.find((plan) => plan.id === ticketPlanId) ?? null : null;
   const activeTicketPack = ticketPlanId ? pocketSyncPackages[ticketPlanId] ?? null : null;
+  const activeJourneyRecord: JourneyRecord | null = useMemo(
+    () => journeyRecords.find((record) => record.id === recordDetailId) ?? null,
+    [recordDetailId]
+  );
+  const activeJourneyRouteStops = useMemo(
+    () => (activeJourneyRecord ? getJourneyRecordRouteStops(activeJourneyRecord) : []),
+    [activeJourneyRecord]
+  );
   const successFlowPlan = successFlowPlanId
     ? completedPlans.find((plan) => plan.id === successFlowPlanId) ?? null
     : null;
@@ -369,6 +414,72 @@ export function TravelSketchbook() {
       showFlow: false,
       onDone: () => setTicketPlanId(plan.id),
     });
+  };
+
+  const buildSharePayload = (plan: CompletedPlan) => {
+    const pack = pocketSyncPackages[plan.id];
+    const stopNames =
+      pack?.places.length && pack.places.length > 0
+        ? pack.places.map((place) => place.name)
+        : resolvePlanStopNames(plan, clonedRoutines);
+    const routeText = stopNames.slice(0, 6).join(" → ");
+    const summary = `${plan.region} · ${plan.totalStops}개 장소 · ${formatMinutesToLabel(plan.totalMinutes)}`;
+    const shareTitle = `${plan.title} | 잇담 여정`;
+    const shareText = `${summary}\n루트: ${routeText}\n#잇담 #여정지도그리기`;
+    const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/app/record` : "";
+    const payloadText = `${shareTitle}\n${shareText}\n${shareUrl}`.trim();
+    return { shareTitle, shareText, shareUrl, payloadText };
+  };
+
+  const handleSharePlan = async (plan: CompletedPlan) => {
+    const { shareTitle, shareText, shareUrl, payloadText } = buildSharePayload(plan);
+
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl || undefined,
+        });
+        setPopupText("여정을 공유했깨비! 친구에게도 루트를 보여줘요.");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(payloadText);
+        setPopupText("공유 문구를 복사했깨비! 원하는 곳에 붙여넣어 공유하세요.");
+        return;
+      } catch {
+        // fall through to legacy copy
+      }
+    }
+
+    if (typeof document !== "undefined") {
+      const textarea = document.createElement("textarea");
+      textarea.value = payloadText;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        setPopupText("공유 문구를 복사했깨비! 원하는 곳에 붙여넣어 공유하세요.");
+      } catch {
+        setPopupText("공유를 지원하지 않는 환경이에요. 잠시 후 다시 시도해주세요.");
+      } finally {
+        document.body.removeChild(textarea);
+      }
+      return;
+    }
+
+    setPopupText("공유를 지원하지 않는 환경이에요. 잠시 후 다시 시도해주세요.");
   };
 
   const visitedProvinceCount = useMemo(
@@ -422,6 +533,7 @@ export function TravelSketchbook() {
   const handleRemoveCompletedPlan = (planId: string) => {
     const next = removeCompletedPlan(planId);
     setCompletedPlans(next);
+    setOpenPlanAccordionId((prev) => (prev === planId ? null : prev));
     setPocketSyncPackages((prev) => {
       const nextPack = { ...prev };
       delete nextPack[planId];
@@ -637,105 +749,136 @@ export function TravelSketchbook() {
               {completedPlans.map((plan) => {
                 const pack = pocketSyncPackages[plan.id];
                 const syncing = syncingPlanId === plan.id;
+                const isOpen = openPlanAccordionId === plan.id;
                 return (
                   <article
                     key={plan.id}
-                    className="rounded-2xl p-3 border"
+                    className="rounded-2xl border"
                     style={{ borderColor: G.line, background: "#FBFDFC" }}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 800, color: G.text }}>{plan.title}</p>
-                        <p style={{ fontSize: 14, color: G.muted }} className="mt-0.5">
-                          {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
-                        </p>
-                        <p style={{ fontSize: 13, color: G.pointDeep, fontWeight: 700 }} className="mt-1">
-                          {formatDateLabel(plan.finalizedAt)}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveCompletedPlan(plan.id)}
-                        className="h-7 w-7 rounded-lg inline-flex items-center justify-center"
-                        style={{ background: "#F1F3F2", color: "#738078" }}
-                        aria-label="확정 플랜 삭제"
-                        title="삭제"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-
                     <button
                       type="button"
-                      onClick={() => handleOpenFinalTicket(plan)}
-                      className="w-full mt-2 rounded-xl border px-3 py-2 text-left"
-                      style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}
+                      onClick={() =>
+                        setOpenPlanAccordionId((prev) => (prev === plan.id ? null : plan.id))
+                      }
+                      className="w-full px-3 py-3 flex items-center justify-between gap-2 text-left"
                     >
-                      <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
-                        {plan.region} 1일차 여정 완성!
+                      <p style={{ fontSize: 14, fontWeight: 800, color: G.text }} className="truncate">
+                        {plan.title}
                       </p>
-                      <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
-                        장소 순서 · 이동 수단 · 예상 혜택을 티켓으로 확인해보세요.
-                      </p>
-                      <p style={{ fontSize: 12, color: "#2D5FAF", fontWeight: 800 }} className="mt-1">
-                        티켓 열어보기
-                      </p>
+                      <ChevronRight
+                        size={16}
+                        className={`text-[#7C8B80] transition-transform shrink-0 ${isOpen ? "rotate-90" : ""}`}
+                      />
                     </button>
 
-                    {pack && (
-                      <div className="mt-2 rounded-xl border p-2.5" style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}>
-                        <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
-                          내 주머니 속 여정(Pocket Sync) 저장 완료
-                        </p>
-                        <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
-                          장소 {pack.places.length}곳 · 쿠폰 바코드 {pack.coupons.length}종 오프라인 보관
-                        </p>
-                        <div className="mt-1.5 flex items-center gap-1">
-                          {pack.places.slice(0, 4).map((place, index) => (
-                            <div key={place.id} className="flex items-center">
-                              <span
-                                className="w-5 h-5 rounded-full inline-flex items-center justify-center"
-                                style={{ background: "#DFF5E5", color: G.pointDeep, fontSize: 11, fontWeight: 900 }}
-                              >
-                                {index + 1}
-                              </span>
-                              {index < Math.min(pack.places.length, 4) - 1 && (
-                                <span className="w-3 h-[2px] mx-1 rounded-full" style={{ background: "#8ED7A0" }} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-1.5 space-y-1">
-                          {pack.places.slice(0, 2).map((place) => (
-                            <p key={place.id} style={{ fontSize: 12, color: "#4E5F51", fontWeight: 700 }}>
-                              {place.order}. {place.name} · {place.moveTip}
+                    {isOpen && (
+                      <div className="px-3 pb-3 border-t" style={{ borderColor: G.line }}>
+                        <div className="flex items-start justify-between gap-2 mt-2">
+                          <div>
+                            <p style={{ fontSize: 14, color: G.muted }}>
+                              {plan.region} · {plan.totalStops}개 장소 · {formatMinutesToLabel(plan.totalMinutes)}
                             </p>
-                          ))}
+                            <p style={{ fontSize: 13, color: G.pointDeep, fontWeight: 700 }} className="mt-1">
+                              {formatDateLabel(plan.finalizedAt)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCompletedPlan(plan.id)}
+                            className="h-7 w-7 rounded-lg inline-flex items-center justify-center"
+                            style={{ background: "#F1F3F2", color: "#738078" }}
+                            aria-label="확정 플랜 삭제"
+                            title="삭제"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFinalTicket(plan)}
+                          className="w-full mt-2 rounded-xl border px-3 py-2 text-left"
+                          style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}
+                        >
+                          <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
+                            {plan.region} {Math.max(plan.tripDays ?? 1, 1)}일 여정 완성!
+                          </p>
+                          <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
+                            장소 순서 · 이동 수단 · 예상 혜택을 티켓으로 확인해보세요.
+                          </p>
+                          <p style={{ fontSize: 12, color: "#2D5FAF", fontWeight: 800 }} className="mt-1">
+                            티켓 열어보기
+                          </p>
+                        </button>
+
+                        {pack && (
+                          <div className="mt-2 rounded-xl border p-2.5" style={{ borderColor: "#D8EBDD", background: "#F4FAF6" }}>
+                            <p style={{ fontSize: 13, fontWeight: 800, color: G.pointDeep }}>
+                              내 주머니 속 여정(Pocket Sync) 저장 완료
+                            </p>
+                            <p style={{ fontSize: 13, color: G.muted }} className="mt-1">
+                              장소 {pack.places.length}곳 · 쿠폰 바코드 {pack.coupons.length}종 오프라인 보관
+                            </p>
+                            <div className="mt-1.5 flex items-center gap-1">
+                              {pack.places.slice(0, 4).map((place, index) => (
+                                <div key={place.id} className="flex items-center">
+                                  <span
+                                    className="w-5 h-5 rounded-full inline-flex items-center justify-center"
+                                    style={{ background: "#DFF5E5", color: G.pointDeep, fontSize: 11, fontWeight: 900 }}
+                                  >
+                                    {index + 1}
+                                  </span>
+                                  {index < Math.min(pack.places.length, 4) - 1 && (
+                                    <span className="w-3 h-[2px] mx-1 rounded-full" style={{ background: "#8ED7A0" }} />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-1.5 space-y-1">
+                              {pack.places.slice(0, 2).map((place) => (
+                                <p key={place.id} style={{ fontSize: 12, color: "#4E5F51", fontWeight: 700 }}>
+                                  {place.order}. {place.name} · {place.moveTip}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          <button
+                            type="button"
+                            disabled={syncing}
+                            onClick={() => createPocketSyncPack(plan, { showFlow: true })}
+                            className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
+                            style={{ background: "#E7F9EC", color: G.pointDeep, fontSize: 13, fontWeight: 800 }}
+                          >
+                            <PackageCheck size={14} />
+                            {syncing ? "보따리 저장 중..." : "오프라인 저장"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled
+                            className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-70"
+                            style={{ background: "#EEF3EF", color: "#7A8A7D", fontSize: 13, fontWeight: 800 }}
+                          >
+                            <MapPinned size={14} />
+                            길안내 준비중
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleSharePlan(plan);
+                          }}
+                          className="w-full mt-2 h-9 rounded-xl inline-flex items-center justify-center gap-1.5"
+                          style={{ background: "#EAF1FF", color: "#2D5FAF", fontSize: 13, fontWeight: 800 }}
+                        >
+                          <Share2 size={14} />
+                          여정 공유하기
+                        </button>
                       </div>
                     )}
-
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <button
-                        type="button"
-                        disabled={syncing}
-                        onClick={() => createPocketSyncPack(plan, { showFlow: true })}
-                        className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5 disabled:opacity-60"
-                        style={{ background: "#E7F9EC", color: G.pointDeep, fontSize: 13, fontWeight: 800 }}
-                      >
-                        <PackageCheck size={14} />
-                        {syncing ? "보따리 저장 중..." : "오프라인 저장"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenMapBridge(plan)}
-                        className="h-9 rounded-xl inline-flex items-center justify-center gap-1.5"
-                        style={{ background: "#EAF1FF", color: "#2D5FAF", fontSize: 13, fontWeight: 800 }}
-                      >
-                        <MapPinned size={14} />
-                        길안내 연동
-                      </button>
-                    </div>
                   </article>
                 );
               })}
@@ -760,10 +903,12 @@ export function TravelSketchbook() {
 
           <div className="space-y-2 mt-3">
             {journeyRecords.map((record) => (
-              <article
+              <button
+                type="button"
                 key={record.id}
-                className="rounded-2xl border overflow-hidden"
+                className="w-full rounded-2xl border overflow-hidden text-left"
                 style={{ borderColor: G.line, background: "#FBFDFC" }}
+                onClick={() => setRecordDetailId(record.id)}
               >
                 <div className="h-[110px] relative">
                   <ImageWithFallback
@@ -785,7 +930,7 @@ export function TravelSketchbook() {
                     {record.memo}
                   </p>
                 </div>
-              </article>
+              </button>
             ))}
           </div>
         </section>
@@ -847,7 +992,7 @@ export function TravelSketchbook() {
 
       {successFlowPlan && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 px-6 flex items-center justify-center">
               <div className="w-full max-w-[340px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
@@ -864,24 +1009,21 @@ export function TravelSketchbook() {
                 <div className="grid gap-2 mt-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setMapBridgePlanId(successFlowPlan.id);
-                      setSuccessFlowPlanId(null);
-                    }}
-                    className="h-10 rounded-xl inline-flex items-center justify-center gap-1.5"
-                    style={{ background: "#EAF1FF", color: "#2D5FAF", fontSize: 13, fontWeight: 800 }}
-                  >
-                    <Navigation size={14} />
-                    내비게이션 실행하기
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setSuccessFlowPlanId(null)}
                     className="h-10 rounded-xl inline-flex items-center justify-center gap-1.5"
-                    style={{ background: "#EEF3EF", color: "#4B5A4D", fontSize: 13, fontWeight: 800 }}
+                    style={{ background: "#E7F9EC", color: "#1A7C38", fontSize: 13, fontWeight: 800 }}
                   >
                     <Route size={14} />
                     바로 담깨비땅으로 가기
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="h-10 rounded-xl inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-70"
+                    style={{ background: "#EEF3EF", color: "#7A8A7D", fontSize: 13, fontWeight: 800 }}
+                  >
+                    <Navigation size={14} />
+                    네비게이션으로 실행 (준비중)
                   </button>
                 </div>
               </div>
@@ -892,7 +1034,7 @@ export function TravelSketchbook() {
 
       {activeMapBridgePack && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 px-6 flex items-center justify-center">
               <div className="w-full max-w-[348px] rounded-2xl p-4 border" style={{ background: "#FFFFFF", borderColor: G.line }}>
@@ -976,7 +1118,7 @@ export function TravelSketchbook() {
 
       {activeTicketPlan && activeTicketPack && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
-          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
             <div className="absolute inset-0 bg-black/35" onClick={() => setTicketPlanId(null)} />
             <div
               className="absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-6"
@@ -993,9 +1135,9 @@ export function TravelSketchbook() {
                   }}
                 />
 
-                <p style={{ fontSize: 14, fontWeight: 900, color: G.text }}>오늘의 여정 확인 티켓</p>
+                <p style={{ fontSize: 14, fontWeight: 900, color: G.text }}>여정 확인 티켓</p>
                 <p style={{ fontSize: 12, color: G.muted }} className="mt-0.5">
-                  {activeTicketPlan.title} · {formatDateLabel(activeTicketPlan.travelDate ?? activeTicketPlan.finalizedAt)}
+                  {activeTicketPlan.title} · {formatPlanDateRange(activeTicketPlan)}
                 </p>
 
                 <div className="mt-3 space-y-2">
@@ -1049,9 +1191,82 @@ export function TravelSketchbook() {
         </div>
       )}
 
+      {activeJourneyRecord && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-3">
+          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
+            <div className="absolute inset-0 bg-black/35" onClick={() => setRecordDetailId(null)} />
+            <div
+              className="absolute inset-x-0 bottom-0 rounded-t-[22px] border-t p-4 pb-6"
+              style={{ background: "#FFFFFF", borderColor: G.line }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 rounded-full mx-auto" style={{ background: "#DDE6DF" }} />
+
+              <div className="mt-3 rounded-2xl border overflow-hidden" style={{ borderColor: "#D8EBDD", background: "#F7FCF8" }}>
+                <div className="h-[132px] relative">
+                  <ImageWithFallback
+                    src={activeJourneyRecord.image}
+                    alt={activeJourneyRecord.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <span
+                    className="absolute top-2.5 left-2.5 px-2 py-1 rounded-lg bg-black/35 text-white"
+                    style={{ fontSize: 12, fontWeight: 700 }}
+                  >
+                    {activeJourneyRecord.date} · {activeJourneyRecord.region}
+                  </span>
+                </div>
+
+                <div className="p-3">
+                  <p style={{ fontSize: 15, fontWeight: 900, color: G.text }}>{activeJourneyRecord.title}</p>
+                  <p style={{ fontSize: 14, color: G.muted }} className="mt-1">
+                    {activeJourneyRecord.memo}
+                  </p>
+                  <div className="mt-2 rounded-xl border px-2.5 py-2" style={{ borderColor: "#DCEDE2", background: "#FFFFFF" }}>
+                    <div className="flex items-center gap-1.5">
+                      <Route size={13} color={G.pointDeep} />
+                      <p style={{ fontSize: 12, fontWeight: 800, color: G.pointDeep }}>루트 요약</p>
+                    </div>
+                    <p style={{ fontSize: 12, color: "#4E5F51", fontWeight: 700, lineHeight: 1.5 }} className="mt-1 break-words">
+                      {summarizeJourneyRecordRoute(activeJourneyRecord)}
+                    </p>
+                    {activeJourneyRouteStops.length > 0 && (
+                      <p style={{ fontSize: 11, color: G.muted, fontWeight: 700 }} className="mt-1">
+                        방문지 {activeJourneyRouteStops.length}곳
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {activeJourneyRecord.tags.map((tag) => (
+                      <span
+                        key={`${activeJourneyRecord.id}-${tag}`}
+                        className="h-6 px-2 rounded-full inline-flex items-center"
+                        style={{ background: "#E7F9EC", color: G.pointDeep, fontSize: 12, fontWeight: 800 }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setRecordDetailId(null)}
+                className="w-full mt-3 h-10 rounded-xl"
+                style={{ background: "#EEF3EF", color: "#4B5A4D", fontSize: 13, fontWeight: 800 }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {popupText && (
         <div className="fixed inset-0 z-40 flex items-center justify-center px-3 pointer-events-none">
-          <div className="relative w-full max-w-[393px] h-[100dvh] max-h-[852px]">
+          <div className="relative w-full max-w-[390px] h-[100dvh] max-h-[844px]">
             <div className="absolute left-1/2 -translate-x-1/2 bottom-[96px]">
               <div
                 className="px-4 py-2 rounded-xl shadow-lg"
