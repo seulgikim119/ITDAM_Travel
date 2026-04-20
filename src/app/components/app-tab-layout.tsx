@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { Home, Bookmark, BookOpen, User } from "lucide-react";
 import { getAuthState, subscribeAuth } from "../auth-store";
@@ -16,6 +16,7 @@ const tabs = [
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const tabBarRef = useRef<HTMLDivElement | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => getAuthState().isLoggedIn);
   const [showBlockedOverlay, setShowBlockedOverlay] = useState(false);
 
@@ -34,6 +35,23 @@ export function AppLayout() {
     setShowBlockedOverlay(true);
   }, [isLoggedIn, location.pathname, navigate]);
 
+  useEffect(() => {
+    const syncTabBarHeight = () => {
+      const measuredHeight = Math.round(tabBarRef.current?.getBoundingClientRect().height ?? 74);
+      document.documentElement.style.setProperty("--app-tabbar-height", `${measuredHeight}px`);
+      window.dispatchEvent(new Event("app-tabbar-resize"));
+    };
+
+    syncTabBarHeight();
+    window.addEventListener("resize", syncTabBarHeight);
+
+    return () => {
+      window.removeEventListener("resize", syncTabBarHeight);
+      document.documentElement.style.removeProperty("--app-tabbar-height");
+      window.dispatchEvent(new Event("app-tabbar-resize"));
+    };
+  }, []);
+
   const handleTabClick = (path: string) => {
     const blockedForGuest = !isLoggedIn && RESTRICTED_TAB_PATHS.has(path);
     if (blockedForGuest) {
@@ -44,8 +62,8 @@ export function AppLayout() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#FFF8E7]">
-      <div className="relative flex-1 overflow-y-auto">
+    <div className="h-full min-h-0 flex flex-col bg-[#FFF8E7]">
+      <div className="relative min-h-0 flex-1 overflow-y-auto">
         <Outlet />
         {showBlockedOverlay && (
           <div className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[2px] flex items-center justify-center">
@@ -59,7 +77,7 @@ export function AppLayout() {
         )}
       </div>
 
-      <div className="bg-white/95 backdrop-blur-md border-t border-[#F0E6D0] px-2 pb-[28px] pt-2">
+      <div ref={tabBarRef} className="bg-white/95 backdrop-blur-md border-t border-[#F0E6D0] px-2 pb-[28px] pt-2">
         <div className="flex justify-around">
           {tabs.map((tab) => {
             const active = location.pathname === tab.path;

@@ -215,3 +215,31 @@
   - Convert Damggaebi Land popup shells to `vw/dvh` sizing with desktop max caps
   - Replace fixed-height-dependent ticket offset logic in `itgaebi-pick-page.tsx` with viewport-ratio-based formula
   - Rebuild and verify
+
+### 2026-04-20 Request 22
+
+- Request: check why mobile layout is broken again
+- Plan:
+  - Re-audit `App.tsx` for regression to fixed `vh` + mobile vertical-centering combination
+  - Restore mobile-first `dvh` layout (`min-h-[100dvh]`, mobile non-centered wrapper)
+  - Re-apply responsive desktop shell sizing (`92vw` + max caps)
+  - Rebuild and verify
+
+### 2026-04-20 Request 23
+
+- Request: fix remaining mobile clipping/layout breakage
+- Plan:
+  - Keep `App.tsx` on mobile-first `dvh` layout and responsive desktop shell constraints
+  - Add `min-h-0` flex safety to `app-tab-layout.tsx` scroll container
+  - Stabilize `routine-detail-page.tsx` by replacing rigid `h-[100dvh]` with `h-full + min-h-[100dvh]`
+  - Add `min-h-0` to the routine-detail scroll area to prevent iOS flex overflow clipping
+  - Rebuild and verify
+
+### 2026-04-20 Request 24
+
+- Request: keep ticket always 10px above bottom tab menu across responsive screens
+- Plan:
+  - Measure tab menu height in `app-tab-layout.tsx` and expose it as CSS variable (`--app-tabbar-height`)
+  - Position ticket in `itgaebi-pick-page.tsx` using `calc(var(--app-tabbar-height) + 10px)`
+  - Recalculate ticket max height using measured tabbar height and react to tabbar resize events
+  - Rebuild and verify

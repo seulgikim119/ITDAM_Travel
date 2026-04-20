@@ -269,7 +269,7 @@ export function Home() {
           style={{ fontSize: 16, fontWeight: 700 }}
         >
           <MapPin size={15} className="text-[#E8A830]" />
-          스냅 루트
+          잇깨비 렌즈
         </button>
       </div>
 
@@ -550,7 +550,7 @@ export function Home() {
 
         <section className="bg-white rounded-3xl p-4 border border-[#F0E6D0]">
           <SectionHeader
-            title="테마 큐레이션"
+            title="	테마 픽업"
             desc="잇깨비 추천 테마 카드를 빠르게 훑어보세요."
             icon={Sparkles}
           />

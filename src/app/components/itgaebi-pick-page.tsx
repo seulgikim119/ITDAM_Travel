@@ -858,17 +858,25 @@ export function SavedPlaces() {
     navigate("/app/record");
   };
 
-  const ticketBottomOffset = "max(calc(74px + env(safe-area-inset-bottom)), calc(7dvh + 20px))";
+  const ticketBottomOffset = "calc(var(--app-tabbar-height, 74px) + 10px)";
 
   useEffect(() => {
     const update = () => {
       const h = window.innerHeight;
-      const bottomOffset = Math.max(74, h * 0.07 + 20);
+      const rootStyle = window.getComputedStyle(document.documentElement);
+      const tabBarHeightRaw = rootStyle.getPropertyValue("--app-tabbar-height").trim();
+      const parsedTabBarHeight = Number.parseFloat(tabBarHeightRaw);
+      const tabBarHeight = Number.isFinite(parsedTabBarHeight) ? parsedTabBarHeight : 74;
+      const bottomOffset = tabBarHeight + 10;
       setTicketMaxHeight(Math.round((h - bottomOffset) * 0.7));
     };
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener("app-tabbar-resize", update as EventListener);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("app-tabbar-resize", update as EventListener);
+    };
   }, []);
 
   return (
@@ -1058,9 +1066,9 @@ export function SavedPlaces() {
         <section className="relative rounded-3xl p-4 border order-1" style={{ background: Y.card, borderColor: Y.line }}>
           <div className="flex items-center justify-between">
             <div>
-              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>여정 다듬기</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>여행 타임라인</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
-                지능형 타임라인 편집
+                여정 조각 잇기
               </h2>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: Y.point }}>
@@ -1859,7 +1867,7 @@ export function SavedPlaces() {
             <div>
               <p style={{ fontSize: 14, fontWeight: 800, color: Y.pointText }}>Benefit Booking</p>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: Y.text }} className="mt-0.5">
-                맥락 혜택 및 미션 예약
+                잇깨비가 챙겨둔 깜짝 혜택
               </h2>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: Y.point }}>

@@ -30,7 +30,7 @@ export function RoutineDetail() {
 
   if (!routine) {
     return (
-      <div className="h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
+      <div className="h-full min-h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
         <StatusBar />
         <div className="px-5 py-4">
           <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-[#4E5968]">
@@ -54,7 +54,7 @@ export function RoutineDetail() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
+    <div className="h-full min-h-[100dvh] flex flex-col bg-[#F5F6FA] overflow-hidden">
       <div className="bg-white border-b border-[#EEF0F4]">
         <StatusBar />
         <div className="px-4 py-2 flex items-center justify-between">
@@ -68,7 +68,7 @@ export function RoutineDetail() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-5 space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-5 space-y-4">
         <section className="bg-white rounded-3xl overflow-hidden shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
           <div className="h-[200px] relative">
             <ImageWithFallback src={routine.image} alt={routine.title} className="w-full h-full object-cover" />
