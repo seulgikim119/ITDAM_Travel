@@ -1,0 +1,20 @@
+{
+    "name": "잇담",
+    "short_name": "잇담",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "description": "설명설명",
+    "icons": [
+        {
+            "src": "./icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "./icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
